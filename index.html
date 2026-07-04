@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Training Leap · 学员端</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ink:#0f172a;--muted:#64748b;--light:#94a3b8;
+  --bg:#f8fafc;--card:#fff;--border:#e2e8f0;
+  --accent:#0d9488;--accent-bg:#f0fdfa;
+}
+body{font-family:-apple-system,"PingFang SC","Helvetica Neue","Noto Sans SC",sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;-webkit-font-smoothing:antialiased}
+.page{display:none}.page.active{display:block}
+
+/* Login */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#f0fdfa 0%,#fafbfc 45%,var(--bg) 100%)}
+.login-card{width:400px;background:var(--card);border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.05),0 12px 40px rgba(0,0,0,.08);padding:44px 36px}
+.login-brand{display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:6px}
+.login-brand svg{width:24px;height:24px;color:var(--accent)}
+.login-brand-name{font-size:22px;font-weight:700;color:var(--ink);letter-spacing:-.5px}
+.login-sub{text-align:center;font-size:12px;color:var(--light);margin-bottom:32px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:500;color:#475569;margin-bottom:5px}
+.field input{width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:8px;font-size:14px;color:var(--ink);background:#fafbfc;transition:all .15s}
+.field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(13,148,136,.06);background:#fff}
+.btn-primary{width:100%;padding:11px;background:var(--ink);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:background .15s;margin-top:4px}
+.btn-primary:hover{background:#1e293b}
+.login-note{text-align:center;margin-top:18px;font-size:11px;color:var(--light);line-height:1.6}
+.login-link{text-align:center;margin-top:14px;font-size:12px;color:var(--light)}
+.login-link a{color:var(--accent);text-decoration:none}
+.login-link a:hover{text-decoration:underline}
+
+/* Topbar */
+.topbar{height:56px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;position:sticky;top:0;z-index:20}
+.topbar-brand{display:flex;align-items:center;gap:8px;cursor:pointer}
+.topbar-brand svg{width:18px;height:18px;color:var(--accent)}
+.topbar-brand span{font-size:15px;font-weight:700;color:var(--ink)}
+.topbar-sep{color:var(--border);margin:0 14px;font-size:16px}
+.topbar-meta{font-size:13px;color:var(--light);flex:1}
+
+/* Config banner (shows audience context from admin) */
+.config-banner{background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:10px;padding:14px 20px;margin-bottom:24px;display:flex;align-items:flex-start;gap:12px}
+.config-banner svg{flex-shrink:0;width:16px;height:16px;color:var(--accent);margin-top:1px}
+.config-banner p{font-size:13px;color:#134e4a;line-height:1.6}
+.config-banner .cb-close{background:none;border:none;color:var(--light);cursor:pointer;font-size:16px;flex-shrink:0;padding:0 4px;line-height:1}
+
+/* Dash */
+.dash{max-width:1080px;margin:0 auto;padding:36px 32px 100px}
+.dash-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:24px}
+.dash-head h1{font-size:24px;font-weight:700;color:var(--ink);letter-spacing:-.3px}
+.dash-head p{font-size:14px;color:var(--light);margin-top:4px}
+.stats{display:flex;gap:14px;margin-bottom:32px}
+.stat-card{flex:1;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;align-items:center;gap:14px}
+.stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+.stat-icon svg{width:18px;height:18px;color:var(--muted)}
+.stat-num{font-size:20px;font-weight:700;color:var(--ink)}
+.stat-label{font-size:12px;color:var(--light)}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.acard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px;cursor:pointer;transition:box-shadow .2s,border-color .2s}
+.acard:hover{border-color:#cbd5e1;box-shadow:0 4px 20px rgba(0,0,0,.05)}
+.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.tag-d{background:#f1f5f9;color:#64748b}
+.tag-a{background:#dbeafe;color:#2563eb}
+.tag-x{background:#d1fae5;color:#059669}
+.acard h3{font-size:15px;font-weight:600;color:var(--ink);line-height:1.5;margin:10px 0 6px}
+.acard .meta{font-size:12px;color:var(--light)}
+.acard .foot{display:flex;align-items:center;justify-content:space-between;margin-top:16px}
+.dots{display:flex;gap:4px}
+.dot{width:6px;height:6px;border-radius:50%;background:#e2e8f0}
+.dot.ok{background:#059669}
+.empty{text-align:center;padding:80px 20px;color:var(--light)}
+.empty h2{font-size:44px;margin-bottom:14px}
+.btn-new{padding:8px 16px;background:var(--ink);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer}
+
+/* Canvas */
+.canvas-bg{background:var(--bg);min-height:100vh}
+.canvas-body{max-width:760px;margin:0 auto;padding:36px 28px 140px}
+.chdr{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:26px 30px;margin-bottom:24px;position:relative}
+.chdr .clabel{font-size:11px;font-weight:500;color:var(--accent);letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px}
+.chdr input.ctitle{font-size:20px;font-weight:700;color:var(--ink);line-height:1.4;border:none;background:transparent;width:80%;padding:0;outline:none;display:block}
+.chdr input.ctitle::placeholder{color:var(--light)}
+.chdr .times{display:flex;gap:20px;margin-top:14px;font-size:12px;color:var(--light)}
+.pwrap{margin-bottom:28px}
+.plbl{font-size:12px;color:var(--light);margin-bottom:6px;display:flex;justify-content:space-between}
+.ptrk{height:3px;background:#e2e8f0;border-radius:2px;overflow:hidden}
+.pfil{height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .4s}
+
+/* Steps */
+.step{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.step-hdr{display:flex;align-items:center;gap:16px;padding:16px 20px;cursor:pointer;user-select:none}
+.step-hdr:hover{background:#fafbfc}
+.step-n{width:28px;height:28px;border-radius:8px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;transition:background .2s}
+.step-n.ok{background:var(--accent)}
+.step-info{flex:1}
+.step-info h4{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:2px}
+.step-info p{font-size:12px;color:var(--light)}
+.step-arr{margin-left:auto;color:var(--light);font-size:13px;transition:transform .2s}
+.step.open .step-arr{transform:rotate(180deg)}
+.step-bdy{display:none;padding:0 20px 18px 64px}
+.step.open .step-bdy{display:block}
+.hint{background:#fafbfd;border:1px solid #eef0f4;border-radius:8px;padding:12px;margin-bottom:12px}
+.hint .htitle{font-size:11px;font-weight:600;color:var(--light);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.hint ul{font-size:12px;color:#475569;line-height:1.7;padding-left:16px}
+.flbl{font-size:13px;font-weight:500;color:#475569;margin-bottom:7px}
+textarea.fta{width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;line-height:1.7;color:var(--ink);resize:vertical;min-height:80px;background:#fafbfc;font-family:inherit;transition:all .15s}
+textarea.fta:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(13,148,136,.06);background:#fff}
+input.fti{width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:14px;color:var(--ink);background:#fafbfc;font-family:inherit;transition:all .15s}
+input.fti:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(13,148,136,.06);background:#fff}
+.row{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+.btnAdd{font-size:13px;color:var(--accent);background:none;border:1px dashed #a7f3d0;border-radius:8px;padding:7px 14px;cursor:pointer;width:100%;transition:all .15s}
+.btnAdd:hover{background:var(--accent-bg)}
+.btnDel{background:none;border:none;color:var(--light);font-size:18px;cursor:pointer;padding:6px 2px;flex-shrink:0;line-height:1}
+.btnDel:hover{color:#ef4444}
+table.mt{width:100%;border-collapse:collapse}
+table.mt th{font-size:11px;font-weight:600;color:var(--light);text-align:left;padding:7px 10px;border-bottom:1px solid var(--border)}
+table.mt td{padding:5px 10px}
+
+/* Footer */
+.fbar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;z-index:10}
+.toast-msg{font-size:13px;color:var(--accent);opacity:0;transition:opacity .3s}
+.toast-msg.show{opacity:1}
+.fbtns{display:flex;gap:10px}
+.btn-secondary{padding:8px 16px;background:#fff;color:#475569;border:1px solid var(--border);border-radius:8px;font-size:13px;cursor:pointer;transition:all .15s}
+.btn-secondary:hover{border-color:#cbd5e1}
+.btn-primary-sm{padding:8px 16px;background:var(--ink);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s}
+.btn-primary-sm:hover{background:#1e293b}
+
+/* Print styles for PDF export */
+@media print{
+  body{background:#fff}
+  .topbar,.fbar,.step-hdr,.config-banner,.plbl{display:none !important}
+  .page{display:block !important}.canvas-bg{background:#fff !important}
+  .canvas-body{padding:20px !important;max-width:100% !important}
+  .step{break-inside:avoid;margin-bottom:16px !important;border:1px solid #ddd !important}
+  .step-bdy{display:block !important}
+  .step-n{background:#f0f0f0 !important;color:#333 !important}
+  .chdr{border:2px solid #333 !important;padding:20px !important}
+  .hint{display:none}
+  textarea.fta,input.fti{border:1px solid #ddd !important;background:#fff !important;resize:none}
+  .mtag.sel{background:#333 !important;color:#fff !important}
+}
+
+/* Method tags */
+.method-tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.mtag{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:#fff;color:#475569;transition:all .15s;user-select:none}
+.mtag:hover{border-color:var(--accent);color:var(--accent)}
+.mtag.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
+#no-methods-hint{font-size:12px;color:var(--light);margin-top:6px;display:none}
+
+@media(max-width:640px){
+.dash{padding:20px 16px 80px}.stats{flex-direction:column}.card-grid{grid-template-columns:1fr}.canvas-body{padding:20px 16px 120px}
+.config-banner{margin:16px 16px 20px;padding:12px 14px}
+}
+</style>
+</head>
+<body>
+
+<!-- PAGE 1: LOGIN -->
+<div id="p-login" class="page active login-wrap">
+<div class="login-card">
+  <div class="login-brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M3 9h6"/></svg>
+    <span class="login-brand-name">Training Leap</span>
+  </div>
+  <div class="login-sub">课后行动画布 · 基于福格行为模型</div>
+  <div class="field"><label>姓名</label><input id="i-name" placeholder="输入你的姓名"></div>
+  <div class="field"><label>公司 / 培训项目</label><input id="i-comp" placeholder="例如：松下电器 · 劲松营"></div>
+  <button id="b-login" class="btn-primary">进入</button>
+  <div class="login-note">适用于中高管课后行动跟进<br>将培训所学落实到真实业务问题中</div>
+</div>
+</div>
+
+<!-- PAGE 2: DASHBOARD -->
+<div id="p-dash" class="page">
+<div class="topbar">
+  <div class="topbar-brand" id="b-logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M3 9h6"/></svg>
+    <span>Training Leap</span>
+  </div>
+  <span class="topbar-sep">/</span>
+  <span class="topbar-meta" id="d-meta"></span>
+</div>
+<div class="dash">
+<div class="dash-head">
+  <div><h1>我的行动计划</h1><p id="d-sub"></p></div>
+  <button id="b-new" class="btn-new">+ 新建计划</button>
+</div>
+
+<!-- Config context banner -->
+<div class="config-banner" id="config-banner" style="display:none">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+  <p id="config-banner-text"></p>
+  <button class="cb-close" onclick="this.parentElement.style.display='none'">×</button>
+</div>
+
+<div class="stats">
+  <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><div class="stat-num" id="st-tot">0</div><div class="stat-label">全部计划</div></div></div>
+  <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div><div class="stat-num" id="st-act">0</div><div class="stat-label">进行中</div></div></div>
+  <div class="stat-card"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/><line x1="20" y1="6" x2="9" y2="17"/></svg></div><div><div class="stat-num" id="st-done">0</div><div class="stat-label">已完成</div></div></div>
+</div>
+<div id="c-grid" class="card-grid"></div>
+<div id="d-empty" class="empty">
+  <h2>&#127919;</h2>
+  <h3 style="font-size:15px;font-weight:600;color:#475569;margin-bottom:6px">还没有行动计划</h3>
+  <p style="font-size:13px;margin-bottom:18px">创建一个计划，把培训所学落实到真实业务问题中</p>
+  <button id="b-new-empty" class="btn-new">创建第一个行动计划</button>
+</div>
+</div>
+</div>
+
+<!-- PAGE 3: CANVAS -->
+<div id="p-canvas" class="page canvas-bg">
+<div class="topbar">
+  <button id="b-back" style="padding:6px 12px;font-size:13px;border:none;background:none;cursor:pointer;color:#475569;display:flex;align-items:center;gap:4px">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>返回</button>
+  <span class="topbar-sep">|</span>
+  <span class="topbar-meta" id="c-meta"></span>
+</div>
+<div class="canvas-body">
+
+<div class="chdr">
+  <div id="c-status" style="position:absolute;top:26px;right:30px"></div>
+  <div class="clabel">课程</div><input class="fti" id="c-course-display" readonly style="font-size:12px;padding:6px 10px;margin-bottom:8px;background:#f8fafc;cursor:default;border-color:#f0f0f0">
+  <input class="ctitle" id="c-title" placeholder="为这个行动计划起一个标题...">
+  <div class="times">创建：<span id="c-created"></span> &nbsp; 最近更新：<span id="c-updated"></span></div>
+</div>
+
+<div class="pwrap">
+  <div class="plbl"><span id="pg-txt">0 / 5 步骤完成</span><span id="pg-pct">0%</span></div>
+  <div class="ptrk"><div class="pfil" id="pg-fill"></div></div>
+</div>
+
+<!-- S1 -->
+<div class="step" id="s1">
+<div class="step-hdr"><div class="step-n">1</div><div class="step-info"><h4>识别真实业务问题</h4><p>找出一个复杂且长期未解决的真实业务问题</p></div><span class="step-arr">&#9660;</span></div>
+<div class="step-bdy">
+<div class="hint"><div class="htitle">提示</div><ul><li>问题应至少涉及两个以上部门之间的不同判断或利益冲突</li><li>问题已存在超过三个月，且没有清晰的解决路径</li><li>用一到三句话描述清楚问题的表现、涉及的部门和当前卡住的关键点</li></ul></div>
+<div class="flbl">问题陈述</div><textarea class="fta" id="v1" placeholder="例如：某产品线在华东市场销量连续三季度下滑，市场部认为需加大广告投入，而销售团队认为核心问题在渠道激励不足..."></textarea>
+</div>
+</div>
+
+<!-- S2 -->
+<div class="step" id="s2">
+<div class="step-hdr"><div class="step-n">2</div><div class="step-info"><h4>链接战略与价值</h4><p>说明该问题与全局经营或市场战略的链接</p></div><span class="step-arr">&#9660;</span></div>
+<div class="step-bdy">
+<div class="hint"><div class="htitle">提示</div><ul><li>指出这个问题与公司哪一个业务战略或产品策略直接相关</li><li>说明解决后会改善哪几项具体业务结果</li><li>避免使用空泛表述</li></ul></div>
+<div style="margin-bottom:14px"><div class="flbl">战略链接</div><textarea class="fta" id="v2l" placeholder="例如：该问题直接关联公司'2025年市场份额提升至行业前三'的战略目标..." style="min-height:60px"></textarea></div>
+<div><div class="flbl">解决价值</div><textarea class="fta" id="v2v" placeholder="例如：解决此分歧后可统一营销资源投放方向，预计Q3华东区销量回升15-20%..." style="min-height:60px"></textarea></div>
+</div>
+</div>
+
+<!-- S3 -->
+<div class="step" id="s3">
+<div class="step-hdr"><div class="step-n">3</div><div class="step-info"><h4>识别协同部门</h4><p>列出必须协同的关键部门及其贡献</p></div><span class="step-arr">&#9660;</span></div>
+<div class="step-bdy">
+<div class="hint"><div class="htitle">提示</div><ul><li>至少一个、最多四个必须参与的业务部门</li><li>明确每个部门需要提供的具体信息或做出的具体动作</li></ul></div>
+<div id="dept-list"></div>
+<button class="btnAdd" id="b-add-dept">+ 添加部门</button>
+</div>
+</div>
+
+<!-- S4 -->
+<div class="step" id="s4">
+<div class="step-hdr"><div class="step-n">4</div><div class="step-info"><h4>选择方法，形成策略</h4><p>从本课程方法工具中选择，形成解决策略</p></div><span class="step-arr">&#9660;</span></div>
+<div class="step-bdy">
+<div style="margin-bottom:14px">
+<div class="flbl">本课程方法工具</div>
+<div style="font-size:11px;color:var(--light);margin-bottom:8px">点击下方标签选择适用于你当前问题的方法工具（可多选）</div>
+<div id="method-tags"></div>
+<div id="no-methods-hint">提示：请先让培训管理员配置本课程的方法工具清单。</div>
+</div>
+<div style="margin-bottom:14px"><div class="flbl">已选方法</div><input class="fti" id="v4m" placeholder="点击上方标签选择方法..." readonly style="background:#f8fafc;cursor:default"></div>
+<div><div class="flbl">解决策略</div><textarea class="fta" id="v4s" placeholder="说明所选方法如何直接作用于你描述的问题..."></textarea></div>
+</div>
+</div>
+
+<!-- S5 -->
+<div class="step" id="s5">
+<div class="step-hdr"><div class="step-n">5</div><div class="step-info"><h4>执行计划与衡量指标</h4><p>细化任务、计划、预期结果与衡量指标</p></div><span class="step-arr">&#9660;</span></div>
+<div class="step-bdy">
+<div style="margin-bottom:18px"><div class="flbl">任务与执行计划</div><div id="task-list"></div><button class="btnAdd" id="b-add-task">+ 添加任务</button></div>
+<div style="margin-bottom:18px"><div class="flbl">预期目标与结果</div><textarea class="fta" id="v5r" placeholder="描述预期的业务层面可观察变化..."></textarea></div>
+<div style="margin-bottom:14px"><div class="flbl">衡量指标</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+<div style="background:#fafbfd;border:1px solid #eef0f4;border-radius:8px;padding:12px"><div style="font-size:11px;font-weight:600;color:var(--light);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">过程指标</div><div style="font-size:12px;color:var(--light);margin-bottom:6px">证明动作完成</div><textarea class="fta" id="v5mp" style="min-height:50px;font-size:13px" placeholder="例：客户偏好矩阵完成"></textarea></div>
+<div style="background:#fafbfd;border:1px solid #eef0f4;border-radius:8px;padding:12px"><div style="font-size:11px;font-weight:600;color:var(--light);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">结果指标</div><div style="font-size:12px;color:var(--light);margin-bottom:6px">业务改善的期待</div><textarea class="fta" id="v5mr" style="min-height:50px;font-size:13px" placeholder="例：销量环比增长15%"></textarea></div>
+</div>
+</div>
+<div><div class="flbl">指标追踪</div>
+<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto">
+<table class="mt"><thead><tr><th style="width:30%">指标名称</th><th style="width:20%">目标值</th><th style="width:20%">当前值</th><th style="width:20%">更新日期</th><th style="width:10%"></th></tr></thead><tbody id="mtbody"></tbody></table>
+<button class="btnAdd" id="b-add-met" style="margin-top:10px">+ 添加追踪指标</button>
+</div>
+</div>
+</div>
+</div>
+
+</div><!-- canvas-body -->
+
+<div class="fbar">
+<div class="toast-msg" id="toast">已保存</div>
+<div class="fbtns">
+<button class="btn-secondary" id="b-export">导出 PDF</button>
+<button class="btn-secondary" id="b-toggle">标记为进行中</button>
+<button class="btn-primary-sm" id="b-save">保存</button>
+</div>
+</div>
+</div><!-- page-canvas -->
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Training Leap · 后台管理</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ink:#0f172a;--muted:#64748b;--light:#94a3b8;
+  --bg:#f8fafc;--card:#fff;--border:#e2e8f0;
+  --accent:#0d9488;--accent-bg:#f0fdfa;
+  --ok:#059669;--ok-bg:#ecfdf5;
+}
+body{font-family:-apple-system,"PingFang SC","Helvetica Neue","Noto Sans SC",sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;height:56px;background:#fff;border-bottom:1px solid var(--border);padding:0 28px;position:sticky;top:0;z-index:100}
+.tb-left{display:flex;align-items:center;gap:12px}
+.tb-brand{display:flex;align-items:center;gap:8px}
+.tb-brand svg{width:22px;height:22px;color:var(--accent)}
+.tb-brand-name{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.3px}
+.tb-tag{font-size:11px;font-weight:500;color:#fff;background:var(--accent);padding:2px 10px;border-radius:10px}
+.tb-right{display:flex;align-items:center;gap:16px}
+.tb-link{font-size:13px;color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:4px;padding:6px 12px;border-radius:8px;border:1px solid var(--border);transition:all .15s}
+.tb-link:hover{color:var(--ink);border-color:#cbd5e1}
+
+/* LAYOUT */
+.admin-wrap{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 56px)}
+.sidebar{background:#fff;border-right:1px solid var(--border);padding:20px 0}
+.si-item{padding:10px 24px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:8px;border-left:3px solid transparent;transition:all .15s}
+.si-item:hover{background:var(--bg);color:var(--ink)}
+.si-item.active{background:var(--accent-bg);color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.si-item svg{width:16px;height:16px;flex-shrink:0}
+.main{max-width:860px;padding:32px 32px 120px}
+
+/* PAGE HEADER */
+.page-header{margin-bottom:28px}
+.page-header h1{font-size:22px;font-weight:700;color:var(--ink);margin-bottom:6px;letter-spacing:-.3px}
+.page-header p{font-size:14px;color:var(--muted);line-height:1.6}
+
+/* CONFIG CARD */
+.ccard{background:var(--card);border:1px solid var(--border);border-radius:16px;margin-bottom:20px;overflow:hidden;transition:border-color .2s}
+.ccard:hover{border-color:#cbd5e1}
+.cchead{display:flex;align-items:center;justify-content:space-between;padding:18px 24px 14px;border-bottom:1px solid #f1f5f9}
+.cch-left{display:flex;align-items:center;gap:12px}
+.cch-num{width:26px;height:26px;border-radius:8px;background:var(--ink);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cch-title{font-size:15px;font-weight:700;color:var(--ink)}
+.cch-status{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+.status-empty{background:#f1f5f9;color:var(--light)}
+.status-ok{background:var(--ok-bg);color:var(--ok)}
+.ccbody{padding:20px 24px}
+
+/* Field group */
+.fg{margin-bottom:16px}
+.fg:last-child{margin-bottom:0}
+.fg-label{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:7px;display:flex;align-items:center;gap:6px}
+.fg-label .fl-icon{width:16px;height:16px;color:var(--accent);flex-shrink:0}
+.fg-sub{font-size:11px;color:var(--light);margin-bottom:7px;line-height:1.5}
+
+/* Inputs */
+.fi{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;color:var(--ink);background:#fafbfc;font-family:inherit;transition:all .15s;resize:vertical}
+.fi:focus{outline:none;border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(13,148,136,.06)}
+.fi::placeholder{color:var(--light)}
+textarea.fi{min-height:72px;line-height:1.65}
+.fi-sm{padding:8px 12px;font-size:13px;min-height:52px}
+
+/* Method tags */
+.method-row{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;background:#fafbfc;border:1.5px solid var(--border);border-radius:10px;min-height:42px;align-items:center}
+.method-row:focus-within{border-color:var(--accent);background:#fff}
+.method-row input{border:none;background:transparent;outline:none;font-size:13px;color:var(--ink);flex:1;min-width:140px;padding:4px 0}
+.mtags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.mtag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px 4px 12px;background:var(--accent-bg);color:var(--accent);border-radius:16px;font-size:12px;font-weight:500}
+.mtag .rmx{background:none;border:none;color:var(--accent);opacity:.5;cursor:pointer;font-size:14px;padding:0 1px;line-height:1}
+.mtag .rmx:hover{opacity:1}
+
+/* Actions */
+.actions{display:flex;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid #f1f5f9}
+.btn-pri{padding:10px 28px;background:var(--ink);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-pri:hover{background:#1e293b}
+.btn-sec{padding:10px 24px;background:#fff;color:var(--muted);border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn-sec:hover{border-color:#cbd5e1;color:var(--ink)}
+
+/* Toast */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--ink);color:#fff;padding:10px 24px;border-radius:10px;font-size:13px;font-weight:500;opacity:0;transition:all .25s;z-index:999;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Student table */
+.st-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.st-head h2{font-size:17px;font-weight:700;color:var(--ink)}
+.st-table{width:100%;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.st-table table{width:100%;border-collapse:collapse}
+.st-table th{text-align:left;font-size:11px;font-weight:600;color:var(--light);text-transform:uppercase;letter-spacing:.5px;padding:12px 16px;background:#fafbfc;border-bottom:1px solid var(--border)}
+.st-table td{padding:12px 16px;font-size:13px;color:var(--muted);border-bottom:1px solid #f8fafc}
+.st-table tr:last-child td{border-bottom:none}
+.st-table tr:hover td{background:#fafbfd}
+.pbar{height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;width:80px;display:inline-block;vertical-align:middle}
+.pbar>div{height:100%;background:var(--accent);border-radius:3px;transition:width .3s}
+.st-empty{text-align:center;padding:48px 20px;color:var(--light)}
+
+/* Tab content */
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+@media(max-width:860px){
+  .admin-wrap{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .main{padding:20px 16px 100px}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-left">
+    <div class="tb-brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M3 9h6"/></svg>
+      <span class="tb-brand-name">Training Leap</span>
+    </div>
+    <span class="tb-tag">后台管理</span>
+  </div>
+  <div class="tb-right">
+    <a href="index.html" class="tb-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      学员端
+    </a>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="admin-wrap">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="si-item active" id="si-config" onclick="switchTab('config',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      项目配置
+    </div>
+    <div class="si-item" id="si-students" onclick="switchTab('students',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      学员追踪
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- TAB: Config -->
+    <div class="tab-content active" id="tab-config">
+
+    <div class="page-header">
+      <h1>培训项目配置</h1>
+      <p>配置完成后，学员端将自动加载这些信息。所有配置保存在本地浏览器中。</p>
+    </div>
+
+    <!-- Card 1: 目标受众 -->
+    <div class="ccard" id="card-audience">
+    <div class="cchead">
+      <div class="cch-left">
+        <div class="cch-num">1</div>
+        <span class="cch-title">目标受众</span>
+      </div>
+      <span class="cch-status status-empty" id="status-audience">未填写</span>
+    </div>
+    <div class="ccbody">
+      <div class="fg">
+        <div class="fg-label">
+          <svg class="fl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          他们是哪个层级？
+        </div>
+        <input class="fi fi-sm" id="cfg-aud-level" placeholder="例如：中高层管理者（总监级以上），跨部门业务负责人">
+      </div>
+      <div class="fg">
+        <div class="fg-label">
+          <svg class="fl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3h-8l-2 4h12z"/></svg>
+          日常工作场景是什么？
+        </div>
+        <textarea class="fi" id="cfg-aud-scene" placeholder="例如：每周参加战略决策会议、管理15&#45;30人团队、负责产品线P&amp;L、需要跨部门协调资源..."></textarea>
+      </div>
+      <div class="fg">
+        <div class="fg-label">
+          <svg class="fl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          最常见的真实业务挑战？
+        </div>
+        <textarea class="fi" id="cfg-aud-challenge" placeholder="例如：部门墙严重导致决策效率低；战略到执行脱节；资源争夺常态化..."></textarea>
+      </div>
+      <div class="fg">
+        <div class="fg-label">
+          <svg class="fl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          工作节奏如何？有没有大块时间做行动计划？
+        </div>
+        <textarea class="fi fi-sm" id="cfg-aud-rhythm" placeholder="例如：碎片化时间为主，会议密集，周末偶尔可投入"></textarea>
+      </div>
+    </div>
+    </div>
+
+    <!-- Card 2: 培训需求与目的 -->
+    <div class="ccard" id="card-purpose">
+    <div class="cchead">
+      <div class="cch-left">
+        <div class="cch-num">2</div>
+        <span class="cch-title">培训主题需求与目的</span>
+      </div>
+      <span class="cch-status status-empty" id="status-purpose">未填写</span>
+    </div>
+    <div class="ccbody">
+      <div class="fg">
+        <div class="fg-label">
+          <svg class="fl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          为什么买这门课？（真实原因）
+        </div>
+        <div class="fg-sub">为什么是这个主题、这个时间、这群人？不是 RFP 上的套话。</div>
+        <textarea class="fi" id="cfg-pur-why" placeholder="例如：公司正在推进数字化转型，但中高管对数字化战略的理解和落地能力参差不齐..."></textarea>
+      </div>
+      <div class="fg">
+        <div class="fg-label">
+          <svg class="fl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          希望学员课后能具体做到什么？
+        </div>
+        <textarea class="fi fi-sm" id="cfg-pur-do" placeholder="例如：能独立完成一个复杂业务问题的结构化分析报告；能在跨部门会议上用统一框架推动共识..."></textarea>
+      </div>
+      <div class="fg">
+        <div class="fg-label">
+          <svg class="fl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          怎么衡量这门课「成功了」？
+        </div>
+        <textarea class="fi fi-sm" id="cfg-pur-measure" placeholder="例如：课后1个月内每个学员提交一份行动计划并开始执行..."></textarea>
+      </div>
+      <div class="fg">
+        <div class="fg-label">
+          <svg class="fl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          课后 3 个月 / 6 个月希望看到什么变化？
+        </div>
+        <textarea class="fi fi-sm" id="cfg-pur-change" placeholder="例如：3个月内至少解决一个长期悬而未决的跨部门问题..."></textarea>
+      </div>
+    </div>
+    </div>
+
+    <!-- Card 3: 项目基本信息 -->
+    <div class="ccard" id="card-project">
+    <div class="cchead">
+      <div class="cch-left">
+        <div class="cch-num">3</div>
+        <span class="cch-title">项目基本信息</span>
+      </div>
+      <span class="cch-status status-empty" id="status-project">未填写</span>
+    </div>
+    <div class="ccbody">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="fg">
+          <div class="fg-label">培训项目名称</div>
+          <input class="fi" id="cfg-program" placeholder="例如：玛雅足球 &#183; 2026期">
+        </div>
+        <div class="fg">
+          <div class="fg-label">课程名称</div>
+          <input class="fi" id="cfg-course" placeholder="例如：战略执行与全局经营">
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <!-- Card 4: 方法工具清单 -->
+    <div class="ccard" id="card-methods">
+    <div class="cchead">
+      <div class="cch-left">
+        <div class="cch-num">4</div>
+        <span class="cch-title">方法工具清单</span>
+      </div>
+      <span class="cch-status status-empty" id="status-methods">未填写</span>
+    </div>
+    <div class="ccbody">
+      <div class="fg-sub" style="margin-bottom:12px">本课程涉及的所有方法工具，学员在行动画布步骤4中选择使用。支持批量输入（逗号、分号、换行分隔）。</div>
+      <div class="method-row" id="method-input-wrap">
+        <input type="text" id="method-text-input" placeholder="输入方法工具名称，按 Enter 添加">
+      </div>
+      <div class="mtags" id="configured-methods-list"></div>
+    </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-pri" id="btn-save">保存配置</button>
+      <button class="btn-sec" id="btn-export">导出 JSON</button>
+    </div>
+
+    </div><!-- /tab-config -->
+
+    <!-- TAB: Students -->
+    <div class="tab-content" id="tab-students">
+      <div class="page-header">
+        <h1>学员进度追踪</h1>
+        <p>查看所有学员的行动计划完成进度。</p>
+      </div>
+      <div class="st-table">
+        <table>
+          <thead><tr><th>公司/项目</th><th>计划标题</th><th>状态</th><th>进度</th><th>最后更新</th></tr></thead>
+          <tbody id="student-tbody"></tbody>
+        </table>
+      </div>
+      <div class="st-empty" id="student-empty" style="display:none">
+        <p style="font-size:14px;color:var(--light)">暂无学员数据</p>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /admin-wrap -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+"use strict";
+
+var KEY = "ac_v6";
+
+function loadStore(){try{return JSON.parse(localStorage[KEY]||"null")||{}}catch(e){return{}}}
+function saveStore(d){try{localStorage[KEY]=JSON.stringify(d)}catch(e){}}
+var S = loadStore();
+if(!S.config) S.config = {};
+if(!S.cards) S.cards = {};
+
+/* ===== STATUS HELPERS ===== */
+
+function hasAudience(){
+  var a=S.config.audience||{};
+  return !!(a.level||a.scene||a.challenge||a.rhythm);
+}
+function hasPurpose(){
+  var p=S.config.purpose||{};
+  return !!(p.why||p.do_||p.measure||p.change);
+}
+function hasProject(){
+  return !!((S.config.program||"").trim()||(S.config.course||"").trim());
+}
+function hasMethods(){
+  return Array.isArray(S.config.methods)&&S.config.methods.length>0;
+}
+
+function updateStatus(id, filled){
+  var el=document.getElementById("status-"+id);
+  if(!el)return;
+  if(filled){
+    el.className="cch-status status-ok";
+    el.textContent="已保存";
+  }else{
+    el.className="cch-status status-empty";
+    el.textContent="未填写";
+  }
+}
+
+function refreshAllStatus(){
+  updateStatus("audience",hasAudience());
+  updateStatus("purpose",hasPurpose());
+  updateStatus("project",hasProject());
+  updateStatus("methods",hasMethods());
+}
+
+/* ===== LOAD FIELDS ===== */
+
+function loadFields(){
+  var a=S.config.audience||{};
+  gv("cfg-aud-level",a.level);
+  gv("cfg-aud-scene",a.scene);
+  gv("cfg-aud-challenge",a.challenge);
+  gv("cfg-aud-rhythm",a.rhythm);
+  var p=S.config.purpose||{};
+  gv("cfg-pur-why",p.why);
+  gv("cfg-pur-do",p.do_);
+  gv("cfg-pur-measure",p.measure);
+  gv("cfg-pur-change",p.change);
+  gv("cfg-program",S.config.program);
+  gv("cfg-course",S.config.course);
+}
+function gv(id,val){var el=document.getElementById(id);if(el)el.value=val||"";}
+
+/* ===== SAVE ===== */
+
+function doSave(){
+  // audience
+  var aud={
+    level:gvv("cfg-aud-level"),
+    scene:gvv("cfg-aud-scene"),
+    challenge:gvv("cfg-aud-challenge"),
+    rhythm:gvv("cfg-aud-rhythm")
+  };
+  S.config.audience=aud;
+
+  // purpose
+  var pur={
+    why:gvv("cfg-pur-why"),
+    do_:gvv("cfg-pur-do"),
+    measure:gvv("cfg-pur-measure"),
+    change:gvv("cfg-pur-change")
+  };
+  S.config.purpose=pur;
+
+  // project
+  S.config.program=gvv("cfg-program");
+  S.config.course=gvv("cfg-course");
+
+  // methods already managed by addMethod/rmMethod
+
+  S.savedAt=new Date().toISOString();
+  saveStore(S);
+  refreshAllStatus();
+  toast("已保存");
+}
+function gvv(id){var el=document.getElementById(id);return el?el.value.trim():""}
+
+/* ===== EXPORT ===== */
+
+function doExport(){
+  var d={
+    program:S.config.program||"",
+    course:S.config.course||"",
+    audience:S.config.audience||{},
+    purpose:S.config.purpose||{},
+    methods:S.config.methods||[],
+    savedAt:S.savedAt||null
+  };
+  var blob=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");a.href=url;a.download="action-canvas-config.json";a.click();URL.revokeObjectURL(url);
+}
+
+/* ===== METHODS ===== */
+
+function renderMethods(){
+  var list=S.config.methods||[],el=document.getElementById("configured-methods-list");
+  if(!el)return;
+  if(!list.length){
+    el.innerHTML='<span style="font-size:12px;color:var(--light)">暂无方法工具，在上方输入后按 Enter 添加</span>';
+    return;
+  }
+  var html="";
+  for(var i=0;i<list.length;i++){
+    html+='<span class="mtag">'+esc(list[i])+'<button class="rmx" data-i="'+i+'">\u00D7</button></span>';
+  }
+  el.innerHTML=html;
+  el.querySelectorAll(".rmx").forEach(function(btn){
+    btn.addEventListener("click",function(){
+      var idx=+this.getAttribute("data-i");
+      if(S.config.methods)S.config.methods.splice(idx,1);
+      renderMethods();refreshAllStatus();
+    });
+  });
+}
+
+function addMethod(){
+  var inp=document.getElementById("method-text-input");
+  if(!inp)return;
+  var v=inp.value.trim();
+  if(!v)return;
+  var items=v.split(/[,，;；\n]+/).map(function(s){return s.trim()}).filter(Boolean);
+  if(!S.config.methods)S.config.methods=[];
+  items.forEach(function(it){
+    if(S.config.methods.indexOf(it)<0)S.config.methods.push(it);
+  });
+  inp.value="";
+  renderMethods();refreshAllStatus();
+}
+
+/* ===== TAB ===== */
+
+window.switchTab=function(name,trigger){
+  document.querySelectorAll(".tab-content").forEach(function(el){el.className="tab-content"});
+  document.getElementById("tab-"+name).className="tab-content active";
+  document.querySelectorAll(".si-item").forEach(function(el){el.className="si-item"});
+  if(trigger)trigger.className="si-item active";
+  if(name==="students")renderStudents();
+};
+
+/* ===== STUDENTS ===== */
+
+function renderStudents(){
+  var tbody=document.getElementById("student-tbody"),empty=document.getElementById("student-empty");
+  if(!tbody)return;
+  var rows=[];
+  Object.keys(S.cards||{}).forEach(function(comp){
+    (S.cards[comp]||[]).forEach(function(c){
+      rows.push({
+        comp:comp,
+        title:c.title||(c.v1?c.v1.slice(0,35)+"\u2026":"未命名"),
+        status:c.status||"draft",
+        pct:Math.round(doneCount(c)/5*100),
+        updated:c.updated||c.created
+      });
+    });
+  });
+  if(!rows.length){tbody.innerHTML="";empty.style.display="block";return}
+  empty.style.display="none";
+  var html="";
+  rows.forEach(function(r){
+    var bg, col, lb;
+    if(r.status==="done"){bg="#ecfdf5";col="#059669";lb="\u5df2\u5b8c\u6210"}
+    else if(r.status==="active"){bg="#eff6ff";col="#2563eb";lb="\u8fdb\u884c\u4e2d"}
+    else{bg="#f8fafc";col="#64748b";lb="\u8349\u7a3f"};
+    var d=r.updated?new Date(r.updated):null;
+    var dt=d?d.getFullYear()+"/"+pad(d.getMonth()+1)+"/"+pad(d.getDate()):"\u2014";
+    html+='<tr>'+
+      '<td style="font-weight:600">'+esc(r.comp)+'</td>'+
+      '<td>'+esc(r.title)+'</td>'+
+      '<td><span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:500;background:'+bg+';color:'+col+'">'+lb+'</span></td>'+
+      '<td><div class="pbar"><div style="width:'+r.pct+'%"></div></div> '+r.pct+'%</td>'+
+      '<td>'+dt+'</td>'+
+    '</tr>';
+  });
+  tbody.innerHTML=html;
+}
+function doneCount(c){
+  if(!c)return 0;
+  var n=0;
+  if(c.v1&&c.v1.trim())n++;
+  if(c.v2l&&c.v2l.trim()&&c.v2v&&c.v2v.trim())n++;
+  if(c.depts&&c.depts[0]&&c.depts[0].name&&c.depts[0].name.trim())n++;
+  if(c.v4m&&c.v4m.trim()&&c.v4s&&c.v4s.trim())n++;
+  if(c.v5r&&c.v5r.trim())n++;
+  return n;
+}
+function pad(n){return String(n).padStart(2,"0")}
+function esc(s){var d=document.createElement("div");d.textContent=s||"";return d.innerHTML}
+
+/* ===== TOAST ===== */
+
+function toast(msg){
+  var t=document.getElementById("toast");
+  t.textContent=msg;
+  t.className="toast show";
+  clearTimeout(t._tm);
+  t._tm=setTimeout(function(){t.className="toast"},2000);
+}
+
+/* ===== INIT ===== */
+
+document.getElementById("btn-save").addEventListener("click",doSave);
+document.getElementById("btn-export").addEventListener("click",doExport);
+
+var methodInput=document.getElementById("method-text-input");
+if(methodInput){
+  methodInput.addEventListener("keydown",function(e){
+    if(e.key==="Enter"){e.preventDefault();addMethod()}
+  });
+  methodInput.addEventListener("blur",function(){
+    if(this.value.trim())addMethod()
+  });
+}
+
+loadFields();
+refreshAllStatus();
+renderMethods();
+
+})();
+</script>
+</body>
+</html>

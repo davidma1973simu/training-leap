@@ -1,0 +1,567 @@
+(function() {
+"use strict";
+
+var KEY = "ac_v6";
+
+function loadStore() {
+  try { return JSON.parse(localStorage[KEY] || "null") || {}; } catch(e) { return {}; }
+}
+function saveStore(d) {
+  try { localStorage[KEY] = JSON.stringify(d); } catch(e) {}
+}
+var store = loadStore();
+var curId = null;
+
+// Ensure store structure
+if (!store.cards) store.cards = {};
+if (!store.config) store.config = {};
+
+function cards() {
+  if (!store.user || !store.user.comp) return [];
+  return store.cards[store.user.comp] || [];
+}
+function saveCards(arr) {
+  if (!store.user || !store.user.comp) return;
+  store.cards[store.user.comp] = arr;
+  saveStore(store);
+}
+function currentCard() {
+  var list = cards();
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].id === curId) return list[i];
+  }
+  return null;
+}
+
+function switchPage(id) {
+  var pages = document.querySelectorAll(".page");
+  for (var i = 0; i < pages.length; i++) pages[i].className = "page";
+  var el = document.getElementById(id);
+  if (el) el.className = "page active";
+  if (id === "p-dash") renderDash();
+  if (id === "p-canvas") renderCanvas();
+}
+
+function iso() { return new Date().toISOString(); }
+function fmt(s) {
+  if (!s) return "";
+  var d = new Date(s);
+  if (isNaN(d)) return "";
+  var mm = String(d.getMonth()+1).padStart(2,"0");
+  var dd = String(d.getDate()).padStart(2,"0");
+  return d.getFullYear() + "/" + mm + "/" + dd;
+}
+function esc(s) {
+  var d = document.createElement("div");
+  d.textContent = s || "";
+  return d.innerHTML;
+}
+
+function showToast() {
+  var t = document.getElementById("toast");
+  if (!t) return;
+  t.className = "toast-msg show";
+  clearTimeout(t._tm);
+  t._tm = setTimeout(function(){ t.className = "toast-msg"; }, 1800);
+}
+
+function doneCount(c) {
+  if (!c) return 0;
+  var n = 0;
+  if (c.v1 && c.v1.trim()) n++;
+  if (c.v2l && c.v2l.trim() && c.v2v && c.v2v.trim()) n++;
+  if (c.depts && c.depts.length && c.depts[0] && c.depts[0].name && c.depts[0].name.trim()) n++;
+  if (c.v4m && c.v4m.trim() && c.v4s && c.v4s.trim()) n++;
+  if (c.v5r && c.v5r.trim()) n++;
+  return n;
+}
+
+function updateProgress(c) {
+  var d = doneCount(c);
+  var pct = Math.round(d / 5 * 100);
+  var pgTxt = document.getElementById("pg-txt");
+  var pgPct = document.getElementById("pg-pct");
+  var pgFill = document.getElementById("pg-fill");
+  if (pgTxt) pgTxt.textContent = d + " / 5 步骤完成";
+  if (pgPct) pgPct.textContent = pct + "%";
+  if (pgFill) pgFill.style.width = pct + "%";
+  markStepNum(1, !!(c.v1 && c.v1.trim()));
+  markStepNum(2, !!(c.v2l && c.v2l.trim() && c.v2v && c.v2v.trim()));
+  markStepNum(3, !!(c.depts && c.depts.length && c.depts[0] && c.depts[0].name && c.depts[0].name.trim()));
+  markStepNum(4, !!(c.v4m && c.v4m.trim() && c.v4s && c.v4s.trim()));
+  markStepNum(5, !!(c.v5r && c.v5r.trim()));
+}
+
+function markStepNum(n, ok) {
+  var el = document.querySelector("#s" + n + " .step-n");
+  if (!el) return;
+  if (ok) { el.className = "step-n ok"; el.innerHTML = "&#10003;"; }
+  else { el.className = "step-n"; el.textContent = n; }
+}
+
+// ========= LOGIN =========
+function doLogin() {
+  var nameEl = document.getElementById("i-name");
+  var compEl = document.getElementById("i-comp");
+  if (!nameEl || !compEl) return;
+  var name = nameEl.value.trim();
+  var comp = compEl.value.trim();
+  if (!name || !comp) { alert("请填写姓名和公司/项目"); return; }
+  store.user = { name: name, comp: comp };
+  if (!store.cards[comp]) store.cards[comp] = [];
+  saveStore(store);
+  switchPage("p-dash");
+}
+window.doLogin = doLogin;
+
+// ========= DASHBOARD =========
+function renderDash() {
+  if (!store.user) return;
+  var list = cards();
+  var prog = store.config.program || store.user.comp;
+  var course = store.config.course || "";
+  var dMeta = document.getElementById("d-meta");
+  var dSub = document.getElementById("d-sub");
+  if (dMeta) dMeta.textContent = store.user.name + " · " + (prog || "");
+  if (dSub) dSub.textContent = (course || "未配置课程") + " · " + list.length + "个行动计划";
+
+  // Render config banner (shows audience context from admin)
+  renderConfigBanner();
+
+  var stTot = document.getElementById("st-tot");
+  var stAct = document.getElementById("st-act");
+  var stDone = document.getElementById("st-done");
+  if (stTot) stTot.textContent = list.length;
+  if (stAct) stAct.textContent = list.filter(function(c){ return c.status === "active"; }).length;
+  if (stDone) stDone.textContent = list.filter(function(c){ return c.status === "done"; }).length;
+
+  var grid = document.getElementById("c-grid");
+  var empty = document.getElementById("d-empty");
+  if (!list.length) {
+    if (grid) grid.style.display = "none";
+    if (empty) empty.style.display = "block";
+    return;
+  }
+  if (grid) grid.style.display = "grid";
+  if (empty) empty.style.display = "none";
+
+  var html = "";
+  for (var i = 0; i < list.length; i++) {
+    var c = list[i];
+    var st = c.status || "draft";
+    var tc = st === "done" ? "tag-x" : (st === "active" ? "tag-a" : "tag-d");
+    var tname = st === "done" ? "已完成" : (st === "active" ? "进行中" : "草稿");
+    var dc = doneCount(c);
+    var dots = "";
+    for (var j = 0; j < 5; j++) dots += '<div class="dot' + (j < dc ? ' ok' : '') + '"></div>';
+    var title = c.title || (c.v1 ? c.v1.slice(0,50) + "…" : "新建行动计划");
+    html += '<div class="acard" data-id="' + c.id + '"><span class="tag ' + tc + '">' + tname + '</span><h3>' + esc(title) + '</h3><div class="meta">' + esc(c.course || store.config.course || "未指定课程") + " · " + fmt(c.updated || c.created) + '</div><div class="foot"><div class="dots">' + dots + '</div><span style="font-size:13px;color:#94a3b8">→</span></div></div>';
+  }
+  if (grid) grid.innerHTML = html;
+  if (grid) {
+    grid.onclick = function(e) {
+      var card = e.target.closest(".acard");
+      if (card) { curId = card.getAttribute("data-id"); switchPage("p-canvas"); }
+    };
+  }
+}
+
+// Render config banner on dashboard
+function renderConfigBanner() {
+  var banner = document.getElementById("config-banner");
+  var text = document.getElementById("config-banner-text");
+  if (!banner || !text) return;
+  var aud = store.config.audience || {};
+  var purpose = store.config.purpose || {};
+  var parts = [];
+  if (aud.level) parts.push("受众：" + aud.level);
+  if (aud.challenge) parts.push("核心挑战：" + aud.challenge.slice(0, 40) + (aud.challenge.length > 40 ? "…" : ""));
+  if (purpose.why) parts.push("培训目的：" + purpose.why.slice(0, 50) + (purpose.why.length > 50 ? "…" : ""));
+  if (parts.length) {
+    text.textContent = parts.join("。");
+    banner.style.display = "flex";
+  } else {
+    banner.style.display = "none";
+  }
+}
+
+function createCard() {
+  var now = iso();
+  var c = {
+    id: "c_" + Date.now(),
+    status: "draft",
+    title: "",
+    course: store.config.course || "",
+    v1:"", v2l:"", v2v:"", v4m:"", v4s:"",
+    v5r:"", v5mp:"", v5mr:"",
+    depts:[{}], tasks:[{}], metrics:[],
+    created: now, updated: now
+  };
+  var list = cards();
+  list.push(c);
+  saveCards(list);
+  curId = c.id;
+  switchPage("p-canvas");
+}
+
+// ========= CANVAS =========
+function renderCanvas() {
+  var c = currentCard();
+  if (!c) { switchPage("p-dash"); return; }
+  var cMeta = document.getElementById("c-meta");
+  var cCourse = document.getElementById("c-course-display");
+  var cTitle = document.getElementById("c-title");
+  var cCreated = document.getElementById("c-created");
+  var cUpdated = document.getElementById("c-updated");
+  if (cMeta) cMeta.textContent = store.user.name + " · " + (store.config.program || store.user.comp);
+  if (cCourse) cCourse.value = c.course || store.config.course || "";
+  if (cTitle) cTitle.value = c.title || "";
+  if (cCreated) cCreated.textContent = fmt(c.created);
+  if (cUpdated) cUpdated.textContent = fmt(c.updated);
+
+  var st = c.status || "draft";
+  var tn = st === "done" ? "已完成" : (st === "active" ? "进行中" : "草稿");
+  var tc = st === "done" ? "tag-x" : (st === "active" ? "tag-a" : "tag-d");
+  var cStatus = document.getElementById("c-status");
+  if (cStatus) cStatus.innerHTML = '<span class="tag ' + tc + '">' + tn + '</span>';
+  var bToggle = document.getElementById("b-toggle");
+  if (bToggle) bToggle.textContent = st === "done" ? "标记为进行中" : "标记为已完成";
+
+  var v1 = document.getElementById("v1");
+  var v2l = document.getElementById("v2l");
+  var v2v = document.getElementById("v2v");
+  var v4m = document.getElementById("v4m");
+  var v4s = document.getElementById("v4s");
+  var v5r = document.getElementById("v5r");
+  var v5mp = document.getElementById("v5mp");
+  var v5mr = document.getElementById("v5mr");
+  if (v1) v1.value = c.v1 || "";
+  if (v2l) v2l.value = c.v2l || "";
+  if (v2v) v2v.value = c.v2v || "";
+  if (v4m) v4m.value = c.v4m || "";
+  if (v4s) v4s.value = c.v4s || "";
+  if (v5r) v5r.value = c.v5r || "";
+  if (v5mp) v5mp.value = c.v5mp || "";
+  if (v5mr) v5mr.value = c.v5mr || "";
+
+  renderMethodTags(c);
+  renderDepts(c);
+  renderTasks(c);
+  renderMetrics(c);
+  updateProgress(c);
+  toggleStep(1, true);
+}
+
+function toggleStep(n, forceOpen) {
+  var step = document.getElementById("s" + n);
+  if (!step) return;
+  if (forceOpen) step.classList.add("open");
+  else step.classList.toggle("open");
+}
+
+// ========= METHOD TAGS =========
+function renderMethodTags(c) {
+  var el = document.getElementById("method-tags");
+  var hint = document.getElementById("no-methods-hint");
+  if (!el) return;
+  var methods = store.config.methods || [];
+  var selected = (c.v4m || "").split(/[\s·，,]+/).filter(function(s){ return s.trim(); });
+
+  if (!methods.length) {
+    el.innerHTML = "";
+    if (hint) hint.style.display = "block";
+    return;
+  }
+  if (hint) hint.style.display = "none";
+  var html = '<div class="method-tags">';
+  for (var i = 0; i < methods.length; i++) {
+    var isSel = selected.indexOf(methods[i]) >= 0;
+    html += '<span class="mtag' + (isSel ? ' sel' : '') + '" data-mname="' + esc(methods[i]) + '">' + esc(methods[i]) + '</span>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+  var tags = el.querySelectorAll(".mtag");
+  for (var j = 0; j < tags.length; j++) {
+    tags[j].addEventListener("click", function() {
+      this.classList.toggle("sel");
+      var names = [];
+      var selTags = document.querySelectorAll("#method-tags .mtag.sel");
+      for (var k = 0; k < selTags.length; k++) names.push(selTags[k].getAttribute("data-mname"));
+      c.v4m = names.join(" · ");
+      var v4mEl = document.getElementById("v4m");
+      if (v4mEl) v4mEl.value = c.v4m;
+      saveStore(store);
+      updateProgress(c);
+      showToast();
+    });
+  }
+}
+
+// ========= DEPTS =========
+function renderDepts(c) {
+  var el = document.getElementById("dept-list");
+  if (!el) return;
+  var ds = (c.depts && c.depts.length) ? c.depts : [{}];
+  var html = "";
+  for (var i = 0; i < ds.length; i++) {
+    html += '<div class="row"><input class="fti" style="flex:1" placeholder="部门名称" value="' + esc(ds[i].name || "") + '"><input class="fti" style="flex:2" placeholder="该部门需要提供的支持" value="' + esc(ds[i].role || "") + '"><button class="btnDel" type="button">&times;</button></div>';
+  }
+  el.innerHTML = html;
+  var dels = el.querySelectorAll(".btnDel");
+  for (var i = 0; i < dels.length; i++) {
+    (function(btn) {
+      btn.addEventListener("click", function() {
+        btn.parentElement.remove();
+        autoSave();
+      });
+    })(dels[i]);
+  }
+}
+function addDeptRow() {
+  var c = currentCard();
+  if (!c) return;
+  if (!c.depts) c.depts = [];
+  c.depts.push({});
+  saveStore(store);
+  renderDepts(c);
+}
+
+// ========= TASKS =========
+function renderTasks(c) {
+  var el = document.getElementById("task-list");
+  if (!el) return;
+  var ts = (c.tasks && c.tasks.length) ? c.tasks : [{}];
+  var html = "";
+  for (var i = 0; i < ts.length; i++) {
+    html += '<div class="row"><input class="fti" style="flex:3" placeholder="任务描述" value="' + esc(ts[i].desc || "") + '"><input class="fti" style="flex:1" placeholder="负责人" value="' + esc(ts[i].owner || "") + '"><input class="fti" style="flex:1" placeholder="截止时间" value="' + esc(ts[i].dl || "") + '"><button class="btnDel" type="button">&times;</button></div>';
+  }
+  el.innerHTML = html;
+  var dels = el.querySelectorAll(".btnDel");
+  for (var i = 0; i < dels.length; i++) {
+    (function(btn) {
+      btn.addEventListener("click", function() {
+        btn.parentElement.remove();
+        autoSave();
+      });
+    })(dels[i]);
+  }
+}
+function addTaskRow() {
+  var c = currentCard();
+  if (!c) return;
+  if (!c.tasks) c.tasks = [];
+  c.tasks.push({});
+  saveStore(store);
+  renderTasks(c);
+}
+
+// ========= METRICS =========
+function renderMetrics(c) {
+  var tb = document.getElementById("mtbody");
+  if (!tb) return;
+  var ms = (c.metrics && c.metrics.length && c.metrics[0] && c.metrics[0].n) ? c.metrics : [];
+  if (!ms.length) {
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;font-size:13px;padding:16px">暂无追踪指标</td></tr>';
+    return;
+  }
+  var html = "";
+  for (var i = 0; i < ms.length; i++) {
+    html += '<tr><td><input class="fti" style="font-size:13px;padding:7px 10px" value="' + esc(ms[i].n || "") + '"></td><td><input class="fti" style="font-size:13px;padding:7px 10px" value="' + esc(ms[i].t || "") + '"></td><td><input class="fti" style="font-size:13px;padding:7px 10px" value="' + esc(ms[i].cur || "") + '"></td><td><input class="fti" style="font-size:13px;padding:7px 10px" value="' + esc(ms[i].dt || "") + '"></td><td><button class="btnDel" data-i="' + i + '" type="button">&times;</button></td></tr>';
+  }
+  tb.innerHTML = html;
+  var dels = tb.querySelectorAll(".btnDel");
+  for (var i = 0; i < dels.length; i++) {
+    (function(btn) {
+      btn.addEventListener("click", function() {
+        var idx = parseInt(btn.getAttribute("data-i"), 10);
+        var cc = currentCard();
+        if (cc && cc.metrics) {
+          cc.metrics.splice(idx, 1);
+          saveStore(store);
+          renderMetrics(cc);
+          autoSave();
+        }
+      });
+    })(dels[i]);
+  }
+}
+function addMetricRow() {
+  var c = currentCard();
+  if (!c) return;
+  if (!c.metrics) c.metrics = [];
+  c.metrics.push({});
+  saveStore(store);
+  renderMetrics(c);
+}
+
+// ========= SAVE =========
+function collectData() {
+  var c = currentCard();
+  if (!c) return;
+  var cTitle = document.getElementById("c-title");
+  var cCourse = document.getElementById("c-course-display");
+  var v1 = document.getElementById("v1");
+  var v2l = document.getElementById("v2l");
+  var v2v = document.getElementById("v2v");
+  var v4m = document.getElementById("v4m");
+  var v4s = document.getElementById("v4s");
+  var v5r = document.getElementById("v5r");
+  var v5mp = document.getElementById("v5mp");
+  var v5mr = document.getElementById("v5mr");
+  if (cTitle) c.title = cTitle.value;
+  if (cCourse) c.course = cCourse.value;
+  if (v1) c.v1 = v1.value;
+  if (v2l) c.v2l = v2l.value;
+  if (v2v) c.v2v = v2v.value;
+  if (v4m) c.v4m = v4m.value;
+  if (v4s) c.v4s = v4s.value;
+  if (v5r) c.v5r = v5r.value;
+  if (v5mp) c.v5mp = v5mp.value;
+  if (v5mr) c.v5mr = v5mr.value;
+
+  c.depts = [];
+  var drs = document.querySelectorAll("#dept-list > div");
+  for (var i = 0; i < drs.length; i++) {
+    var ins = drs[i].querySelectorAll("input");
+    if (ins[0] && (ins[0].value || (ins[1] && ins[1].value))) {
+      c.depts.push({ name: ins[0].value, role: ins[1] ? ins[1].value : "" });
+    }
+  }
+  c.tasks = [];
+  var trs = document.querySelectorAll("#task-list > div");
+  for (var i = 0; i < trs.length; i++) {
+    var ins = trs[i].querySelectorAll("input");
+    if (ins[0] && ins[0].value) {
+      c.tasks.push({ desc: ins[0].value, owner: ins[1]?ins[1].value:"", dl: ins[2]?ins[2].value:"" });
+    }
+  }
+  c.metrics = [];
+  var mtrs = document.querySelectorAll("#mtbody tr");
+  for (var i = 0; i < mtrs.length; i++) {
+    var ins = mtrs[i].querySelectorAll("input");
+    if (ins.length >= 4 && ins[0] && ins[0].value) {
+      c.metrics.push({ n: ins[0].value, t: ins[1]?ins[1].value:"", cur: ins[2]?ins[2].value:"", dt: ins[3]?ins[3].value:"" });
+    }
+  }
+  c.updated = iso();
+}
+
+function doSave() {
+  collectData();
+  saveStore(store);
+  showToast();
+  var c = currentCard();
+  if (c) updateProgress(c);
+}
+function autoSave() { doSave(); }
+
+function toggleStatus() {
+  var c = currentCard();
+  if (!c) return;
+  if (c.status === "done") c.status = "active";
+  else if (c.status === "active") c.status = "done";
+  else c.status = "active";
+  saveStore(store);
+  renderCanvas();
+}
+function goBack() { doSave(); switchPage("p-dash"); }
+
+// ========= EXPORT =========
+function doExportPDF() {
+  // Collect latest data first
+  collectData();
+  var c = currentCard();
+  if (!c) return;
+
+  // Set document title for PDF filename
+  var title = c.title || "行动计划";
+  var userName = store.user ? store.user.name : "学员";
+  document.title = title + " - " + userName + " - Training Leap";
+
+  // Trigger print dialog (user can "Save as PDF")
+  window.print();
+}
+
+function doExportJSON() {
+  collectData();
+  var c = currentCard();
+  if (!c) return;
+
+  var exportData = {
+    user: store.user,
+    config: {
+      program: store.config.program,
+      course: store.config.course
+    },
+    card: c,
+    exportedAt: iso()
+  };
+
+  var blob = new Blob([JSON.stringify(exportData, null, 2)], {type: "application/json"});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = (c.title || "行动计划") + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ========= INIT =========
+function initBindings() {
+  var bLogin = document.getElementById("b-login");
+  if (bLogin) bLogin.addEventListener("click", function(e) { e.preventDefault(); doLogin(); });
+
+  var bNew = document.getElementById("b-new");
+  if (bNew) bNew.addEventListener("click", createCard);
+  var bNewEmpty = document.getElementById("b-new-empty");
+  if (bNewEmpty) bNewEmpty.addEventListener("click", createCard);
+
+  var bBack = document.getElementById("b-back");
+  if (bBack) bBack.addEventListener("click", goBack);
+
+  var bSave = document.getElementById("b-save");
+  if (bSave) bSave.addEventListener("click", doSave);
+
+  var bToggle = document.getElementById("b-toggle");
+  if (bToggle) bToggle.addEventListener("click", toggleStatus);
+
+  var bExport = document.getElementById("b-export");
+  if (bExport) bExport.addEventListener("click", doExportPDF);
+
+  var bLogo = document.getElementById("b-logo");
+  if (bLogo) bLogo.addEventListener("click", function() { switchPage("p-dash"); });
+
+  for (var i = 1; i <= 5; i++) {
+    (function(n) {
+      var hdr = document.querySelector("#s" + n + " .step-hdr");
+      if (hdr) hdr.addEventListener("click", function() { toggleStep(n); });
+    })(i);
+  }
+
+  var bAddDept = document.getElementById("b-add-dept");
+  if (bAddDept) bAddDept.addEventListener("click", addDeptRow);
+  var bAddTask = document.getElementById("b-add-task");
+  if (bAddTask) bAddTask.addEventListener("click", addTaskRow);
+  var bAddMet = document.getElementById("b-add-met");
+  if (bAddMet) bAddMet.addEventListener("click", addMetricRow);
+
+  var inputs = document.querySelectorAll("input, textarea");
+  for (var j = 0; j < inputs.length; j++) {
+    inputs[j].addEventListener("input", function() {
+      clearTimeout(autoSave._tm);
+      autoSave._tm = setTimeout(autoSave, 800);
+    });
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initBindings);
+} else {
+  initBindings();
+}
+
+if (store.user && store.user.name) {
+  switchPage("p-dash");
+}
+
+})();

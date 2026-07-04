@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Test</title></head>
+<body style="font-family:sans-serif;padding:40px">
+<h1>Action Canvas Test</h1>
+<p>姓名: <input id="n"></p>
+<p>公司: <input id="c"></p>
+<button id="btn" style="padding:12px 24px;font-size:16px;cursor:pointer">进入画布</button>
+<div id="result" style="margin-top:20px;font-size:20px;color:green"></div>
+
+<script>
+document.getElementById('btn').onclick = function() {
+    var n = document.getElementById('n').value;
+    var c = document.getElementById('c').value;
+    document.getElementById('result').innerHTML = 'SUCCESS! 你是 ' + n + ', 公司: ' + c;
+    alert('按钮工作了!');
+};
+console.log('TEST PAGE LOADED');
+</script>
+</body></html>

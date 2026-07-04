@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action Canvas</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:#1a2737;background:#f5f7fa;-webkit-font-smoothing:antialiased}
+.v{display:none}.v.active{display:block}
+.lw{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#f0f4ff,#fafbff 40%,#f5f7fa)}
+.lc{width:420px;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,0.04),0 8px 32px rgba(0,0,0,0.06);padding:48px 40px}
+.li{width:100%;padding:11px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:15px;color:#1a2737;background:#fafbfc;transition:border-color 0.15s,box-shadow 0.15s}
+.li:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,0.08);background:#fff}
+.li::placeholder{color:#94a3b8}
+.bd{width:100%;padding:11px;background:#0a1628;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer}
+.bd:hover{background:#1e293b}
+</style>
+</head>
+<body>
+<div id="v1" class="v active lw">
+<div class="lc">
+<div style="text-align:center;margin-bottom:40px">
+<div style="font-size:28px;font-weight:700;color:#0a1628;letter-spacing:-0.5px">Action Canvas</div>
+<div style="font-size:13px;color:#94a3b8;margin-top:6px">课后行动画布</div>
+</div>
+<div style="margin-bottom:18px">
+<label style="display:block;font-size:13px;font-weight:500;color:#475569;margin-bottom:6px">姓名</label>
+<input id="fname" class="li" placeholder="输入你的姓名">
+</div>
+<div style="margin-bottom:24px">
+<label style="display:block;font-size:13px;font-weight:500;color:#475569;margin-bottom:6px">公司 / 培训项目</label>
+<input id="fcomp" class="li" placeholder="例如：松下电器 · 劲松营">
+</div>
+<button id="btnLogin" class="bd">进入画布</button>
+<div style="text-align:center;margin-top:20px;font-size:11px;color:#94a3b8;line-height:1.6">
+基于福格行为模型设计<br>适用于中高管课后行动跟进
+</div>
+</div>
+</div>
+
+<div id="v2" class="v" style="padding:100px;text-align:center;color:#475569">
+<h2>登录成功！</h2>
+<p id="welcome" style="margin:20px 0;font-size:18px"></p>
+<button onclick="alert('画布功能加载中...')" style="padding:10px 20px;font-size:14px;cursor:pointer">进入行动计划</button>
+<br><br>
+<button onclick="document.getElementById('v2').classList.remove('active');document.getElementById('v1').classList.add('active')" style="padding:8px 16px;font-size:13px;cursor:pointer;background:none;border:1px solid #e2e8f0;border-radius:8px">返回登录</button>
+</div>
+
+<script>
+console.log("JS loaded");
+var btn = document.getElementById("btnLogin");
+if (btn) {
+  btn.addEventListener("click", function() {
+    var n = document.getElementById("fname").value.trim();
+    var c = document.getElementById("fcomp").value.trim();
+    if (!n || !c) { alert("请填写姓名和公司/项目"); return; }
+    document.getElementById("welcome").textContent = "欢迎，" + n + "（" + c + "）";
+    document.getElementById("v1").classList.remove("active");
+    document.getElementById("v2").classList.add("active");
+    console.log("Navigated to dashboard");
+  });
+  console.log("Login button bound");
+} else {
+  console.log("ERROR: btnLogin not found");
+}
+</script>
+</body>
+</html>
