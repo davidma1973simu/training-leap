@@ -204,6 +204,59 @@ function createCard() {
   switchPage("p-canvas");
 }
 
+// ========= CONTEXT PANEL =========
+function toggleCtx() {
+  var body = document.getElementById("ctx-body");
+  var arr = document.getElementById("ctx-arr");
+  var txt = document.getElementById("ctx-toggle-text");
+  if (!body) return;
+  if (body.classList.contains("open")) {
+    body.classList.remove("open");
+    if (arr) arr.classList.remove("open");
+    if (txt) txt.textContent = "查看培训背景";
+  } else {
+    body.classList.add("open");
+    if (arr) arr.classList.add("open");
+    if (txt) txt.textContent = "收起培训背景";
+  }
+}
+window.toggleCtx = toggleCtx;
+
+function renderContextPanel() {
+  var panel = document.getElementById("ctx-panel");
+  if (!panel) return;
+
+  var aud = store.config.audience || {};
+  var pur = store.config.purpose || {};
+
+  // Check if there is any meaningful config
+  var hasContent = !!(aud.level || aud.challenge || pur.why || pur.do_ || pur.measure || pur.change);
+  if (!hasContent) {
+    panel.style.display = "none";
+    return;
+  }
+
+  panel.style.display = "block";
+
+  // Audience block
+  var el = document.getElementById("ctx-aud-level");
+  if (el) el.textContent = aud.level || "";
+  el = document.getElementById("ctx-aud-challenge");
+  if (el) el.textContent = aud.challenge ? "核心挑战：" + aud.challenge : "";
+
+  // Purpose block
+  el = document.getElementById("ctx-pur-why");
+  if (el) el.textContent = pur.why || "";
+  el = document.getElementById("ctx-pur-do");
+  if (el) el.textContent = pur.do_ ? "课后目标：" + pur.do_ : "";
+
+  // Measure block
+  el = document.getElementById("ctx-pur-measure");
+  if (el) el.textContent = pur.measure || "";
+  el = document.getElementById("ctx-pur-change");
+  if (el) el.textContent = pur.change ? "3/6个月目标：" + pur.change : "";
+}
+
 // ========= CANVAS =========
 function renderCanvas() {
   var c = currentCard();
@@ -244,6 +297,8 @@ function renderCanvas() {
   if (v5mp) v5mp.value = c.v5mp || "";
   if (v5mr) v5mr.value = c.v5mr || "";
 
+  renderContextPanel();
+  updateHintsFromConfig();
   renderMethodTags(c);
   renderDepts(c);
   renderTasks(c);
@@ -257,6 +312,32 @@ function toggleStep(n, forceOpen) {
   if (!step) return;
   if (forceOpen) step.classList.add("open");
   else step.classList.toggle("open");
+}
+
+function updateHintsFromConfig() {
+  var aud = store.config.audience || {};
+  var pur = store.config.purpose || {};
+
+  // Step 1 hint: add challenge context if available
+  var s1Hint = document.querySelector("#s1 .hint ul");
+  if (s1Hint) {
+    var extra = "";
+    if (aud.challenge) extra = '<li style="color:#0d9488;font-weight:500">本次培训关注：' + esc(aud.challenge.slice(0, 60)) + (aud.challenge.length > 60 ? "\u2026" : "") + "</li>";
+    // Keep original 3 hints, prepend context if available
+    if (extra && !s1Hint.innerHTML.match(/本次培训关注/)) {
+      s1Hint.innerHTML = extra + s1Hint.innerHTML;
+    }
+  }
+
+  // Step 5 measure hint: add measure context
+  var s5mp = document.getElementById("v5mp");
+  if (s5mp && pur.measure) {
+    s5mp.placeholder = "参考培训目标：" + pur.measure.slice(0, 30) + (pur.measure.length > 30 ? "\u2026" : "") + "\n\n例：客户偏好矩阵完成";
+  }
+  var s5mr = document.getElementById("v5mr");
+  if (s5mr && pur.change) {
+    s5mr.placeholder = "参考 3/6 个月目标：" + pur.change.slice(0, 30) + (pur.change.length > 30 ? "\u2026" : "") + "\n\n例：销量环比增长 15%";
+  }
 }
 
 // ========= METHOD TAGS =========

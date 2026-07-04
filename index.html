@@ -149,6 +149,26 @@ table.mt td{padding:5px 10px}
 .mtag.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
 #no-methods-hint{font-size:12px;color:var(--light);margin-top:6px;display:none}
 
+/* Context Panel (injected from admin config) */
+.ctx-panel{background:var(--accent-bg);border:1px solid #a7f3d0;border-radius:12px;margin-bottom:24px;overflow:hidden;transition:box-shadow .2s}
+.ctx-panel:hover{box-shadow:0 2px 12px rgba(13,148,136,.1)}
+.ctx-toggle{display:flex;align-items:center;gap:7px;padding:12px 18px;cursor:pointer;font-size:12px;font-weight:600;color:var(--accent);user-select:none}
+.ctx-toggle:hover{background:#e0f7f4}
+.ctx-arr{transition:transform .2s}
+.ctx-arr.open{transform:rotate(90deg)}
+.ctx-body{display:none;padding:0 18px 16px}
+.ctx-body.open{display:block}
+.ctx-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:12px}
+.ctx-block{background:#fff;border:1px solid #bfef9;padding:14px;border-radius:10px}
+.ctx-label{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.ctx-text{font-size:12px;color:#134e4a;line-height:1.6;margin-bottom:4px}
+.ctx-text:last-child{margin-bottom:0}
+.ctx-hint{font-size:11px;color:#0f766e;line-height:1.5}
+
+@medi(max-width:860px){
+.ctx-grid{grid-template-columns:1fr}
+}
+
 @media(max-width:640px){
 .dash{padding:20px 16px 80px}.stats{flex-direction:column}.card-grid{grid-template-columns:1fr}.canvas-body{padding:20px 16px 120px}
 .config-banner{margin:16px 16px 20px;padding:12px 14px}
@@ -225,6 +245,35 @@ table.mt td{padding:5px 10px}
   <div class="clabel">课程</div><input class="fti" id="c-course-display" readonly style="font-size:12px;padding:6px 10px;margin-bottom:8px;background:#f8fafc;cursor:default;border-color:#f0f0f0">
   <input class="ctitle" id="c-title" placeholder="为这个行动计划起一个标题...">
   <div class="times">创建：<span id="c-created"></span> &nbsp; 最近更新：<span id="c-updated"></span></div>
+</div>
+
+<!-- Training Context Panel (injected from admin config) -->
+<div id="ctx-panel" class="ctx-panel" style="display:none">
+  <div class="ctx-toggle" id="ctx-toggle" onclick="toggleCtx()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    <span id="ctx-toggle-text">查看培训背景</span>
+    <svg id="ctx-arr" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:auto;transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+  <div class="ctx-body" id="ctx-body">
+    <div class="ctx-grid">
+      <div class="ctx-block" id="ctx-audience">
+        <div class="ctx-label">目标受众</div>
+        <div class="ctx-text" id="ctx-aud-level"></div>
+        <div class="ctx-text" id="ctx-aud-challenge"></div>
+      </div>
+      <div class="ctx-block" id="ctx-purpose">
+        <div class="ctx-label">培训目的</div>
+        <div class="ctx-text" id="ctx-pur-why"></div>
+        <div class="ctx-text" id="ctx-pur-do"></div>
+      </div>
+      <div class="ctx-block" id="ctx-measure">
+        <div class="ctx-label">衡量成功</div>
+        <div class="ctx-text" id="ctx-pur-measure"></div>
+        <div class="ctx-text" id="ctx-pur-change"></div>
+      </div>
+    </div>
+    <div class="ctx-hint">以上信息由培训组织者配置，帮助你把行动计划对准真实的业务目标。</div>
+  </div>
 </div>
 
 <div class="pwrap">
