@@ -237,6 +237,13 @@ table.mt td{padding:6px 10px}
 .ctx-grid{grid-template-columns:1fr}
 }
 
+/* Delete button on card */
+.btn-del{background:none;border:none;color:var(--light);font-size:16px;cursor:pointer;padding:4px 6px;border-radius:6px;transition:all .15s;line-height:1;flex-shrink:0}
+.btn-del:hover{color:var(--rose);background:var(--rose-bg)}
+
+/* Logout button */
+#b-logout:hover{border-color:#cbd5e1;color:var(--ink);background:var(--bg)}
+
 @media(max-width:640px){
 .dash{padding:20px 16px 80px}.stats{flex-direction:column}.card-grid{grid-template-columns:1fr}.canvas-body{padding:20px 16px 120px}
 .config-banner{margin:16px 16px 20px;padding:12px 14px}
@@ -269,13 +276,14 @@ table.mt td{padding:6px 10px}
 
 <!-- PAGE 2: DASHBOARD -->
 <div id="p-dash" class="page">
-<div class="topbar">
+  <div class="topbar">
   <div class="topbar-brand" id="b-logo">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M3 9h6"/></svg>
     <span>Training Leap</span>
   </div>
   <span class="topbar-sep">/</span>
   <span class="topbar-meta" id="d-meta"></span>
+  <button id="b-logout" style="margin-left:auto;padding:6px 14px;font-size:12px;font-weight:500;color:var(--light);background:none;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s;letter-spacing:.2px">退出登录</button>
 </div>
 <div class="dash">
 <div class="dash-head">

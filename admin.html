@@ -194,6 +194,10 @@ textarea.fi{min-height:72px;line-height:1.65}
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
       返回主页
     </a>
+    <button id="btn-reset-gate" class="tb-link" style="border:none;background:none;cursor:pointer;font-family:inherit">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+      重置门禁
+    </button>
   </div>
 </div>
 
@@ -874,6 +878,14 @@ function toast(msg){
 document.getElementById("btn-save").addEventListener("click",doSave);
 document.getElementById("btn-export").addEventListener("click",doExport);
 document.getElementById("btn-import").addEventListener("click",doImport);
+
+var btnResetGate = document.getElementById("btn-reset-gate");
+if(btnResetGate){
+  btnResetGate.addEventListener("click", function(){
+    sessionStorage.removeItem("tl_admin_gate");
+    location.reload();
+  });
+}
 
 var methodInput=document.getElementById("method-text-input");
 if(methodInput){

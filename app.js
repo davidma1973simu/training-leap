@@ -162,11 +162,27 @@ function renderDash() {
     var dots = "";
     for (var j = 0; j < 5; j++) dots += '<div class="dot' + (j < dc ? ' ok' : '') + '"></div>';
     var title = c.title || (c.v1 ? c.v1.slice(0,50) + "…" : "新建行动计划");
-    html += '<div class="acard" data-id="' + c.id + '"><span class="tag ' + tc + '">' + tname + '</span><h3>' + esc(title) + '</h3><div class="meta">' + esc(c.course || store.config.course || "未指定课程") + " · " + fmt(c.updated || c.created) + '</div><div class="foot"><div class="dots">' + dots + '</div><span style="font-size:13px;color:#94a3b8">→</span></div></div>';
+    html += '<div class="acard" data-id="' + c.id + '"><span class="tag ' + tc + '">' + tname + '</span><h3>' + esc(title) + '</h3><div class="meta">' + esc(c.course || store.config.course || "未指定课程") + " · " + fmt(c.updated || c.created) + '</div><div class="foot"><div class="dots">' + dots + '</div><button class="btn-del" data-id="' + c.id + '" title="删除">&#128465;</button></div></div>';
   }
   if (grid) grid.innerHTML = html;
   if (grid) {
     grid.onclick = function(e) {
+      var delBtn = e.target.closest(".btn-del");
+      if (delBtn) {
+        e.stopPropagation();
+        var id = delBtn.getAttribute("data-id");
+        if (confirm("确认删除此行动计划？此操作不可恢复。")) {
+          var list = cards();
+          var idx = -1;
+          for (var i = 0; i < list.length; i++) { if (list[i].id === id) { idx = i; break; } }
+          if (idx >= 0) {
+            list.splice(idx, 1);
+            saveCards(list);
+            renderDash();
+          }
+        }
+        return;
+      }
       var card = e.target.closest(".acard");
       if (card) { curId = card.getAttribute("data-id"); switchPage("p-canvas"); }
     };
@@ -763,6 +779,16 @@ function initBindings() {
 
   var bSubmit = document.getElementById("b-submit");
   if (bSubmit) bSubmit.addEventListener("click", doSubmitCode);
+
+  var bLogout = document.getElementById("b-logout");
+  if (bLogout) bLogout.addEventListener("click", function() {
+    if (confirm("退出后将清除当前登录状态，确认退出？")) {
+      delete store.user;
+      saveStore(store);
+      curId = null;
+      switchPage("p-login");
+    }
+  });
 
   var bLogo = document.getElementById("b-logo");
   if (bLogo) bLogo.addEventListener("click", function() { switchPage("p-dash"); });
