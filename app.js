@@ -71,7 +71,7 @@ function doneCount(c) {
   if (c.v1 && c.v1.trim()) n++;
   if (c.v2l && c.v2l.trim() && c.v2v && c.v2v.trim()) n++;
   if (c.depts && c.depts.length && c.depts[0] && c.depts[0].name && c.depts[0].name.trim()) n++;
-  if (c.v4m && c.v4m.trim() && c.v4s && c.v4s.trim()) n++;
+  if (c.v4s && c.v4s.trim() && c.v4methods && c.v4methods.length) n++;
   // Backward compat: also count new methods array
   if (!n && c.methods && c.methods.length) {
     var hasStrat = false;
@@ -96,7 +96,7 @@ function updateProgress(c) {
   markStepNum(1, !!(c.v1 && c.v1.trim()));
   markStepNum(2, !!(c.v2l && c.v2l.trim() && c.v2v && c.v2v.trim()));
   markStepNum(3, !!(c.depts && c.depts.length && c.depts[0] && c.depts[0].name && c.depts[0].name.trim()));
-  markStepNum(4, step4Done(c));
+  markStepNum(4, !!(c.v4s && c.v4s.trim() && c.v4methods && c.v4methods.length));
   markStepNum(5, !!(c.v5r && c.v5r.trim()));
 }
 
@@ -107,19 +107,7 @@ function markStepNum(n, ok) {
   else { el.className = "step-n"; el.textContent = n; }
 }
 
-function step4Done(c) {
-  // New format
-  if (c.methods && c.methods.length) {
-    for (var i = 0; i < c.methods.length; i++) {
-      if (c.methods[i].strategy && c.methods[i].strategy.trim()) return true;
-    }
-  }
-  // Backward compat with old v4m/v4s
-  return !!(c.v4m && c.v4m.trim() && c.v4s && c.v4s.trim());
-}
-
-// ========= LOGIN =========
-function doLogin() {
+function markStepNum(n, ok) {
   var nameEl = document.getElementById("i-name");
   var compEl = document.getElementById("i-comp");
   if (!nameEl || !compEl) return;
@@ -212,7 +200,7 @@ function createCard() {
     title: "",
     course: store.config.course || "",
     v1:"", v2l:"", v2v:"",
-    methods:[], v4m:"", v4s:"",
+    v4s:"", v4methods:[], v4notes:{},
     v5r:"", v5mp:"", v5mr:"",
     depts:[{}], tasks:[{}], metrics:[],
     created: now, updated: now
@@ -311,14 +299,18 @@ function renderCanvas() {
   if (v1) v1.value = c.v1 || "";
   if (v2l) v2l.value = c.v2l || "";
   if (v2v) v2v.value = c.v2v || "";
+  var v4s = document.getElementById("v4s");
+  if (v4s) v4s.value = c.v4s || "";
   if (v5r) v5r.value = c.v5r || "";
   if (v5mp) v5mp.value = c.v5mp || "";
   if (v5mr) v5mr.value = c.v5mr || "";
+  renderMethodTags(c);
+  renderMethodNotes(c);
 
   renderContextPanel();
   updateHintsFromConfig();
   renderMethodTags(c);
-  renderStrategyCards(c);
+  renderMethodNotes(c);
   renderDepts(c);
   renderTasks(c);
   renderMetrics(c);
@@ -360,29 +352,12 @@ function updateHintsFromConfig() {
 }
 
 // ========= METHOD TAGS =========
+// Step 4 Part 2: select methods after writing strategy
 function renderMethodTags(c) {
   var el = document.getElementById("method-tags");
   var hint = document.getElementById("no-methods-hint");
   if (!el) return;
   var methods = store.config.methods || [];
-
-  // Ensure c.methods is an array
-  if (!c.methods) c.methods = [];
-
-  // Build selected set from c.methods array
-  var selectedSet = {};
-  for (var s = 0; s < c.methods.length; s++) {
-    selectedSet[c.methods[s].name] = true;
-  }
-
-  // Backward compat: if old v4m exists, migrate to new format
-  if (!c.methods.length && c.v4m && c.v4m.trim()) {
-    var oldNames = c.v4m.split(/[\s·，,]+/).filter(function(s){ return s.trim(); });
-    for (var oi = 0; oi < oldNames.length; oi++) {
-      c.methods.push({ name: oldNames[oi].trim(), strategy: c.v4s || "" });
-    }
-    saveStore(store);
-  }
 
   if (!methods.length) {
     el.innerHTML = "";
@@ -390,84 +365,87 @@ function renderMethodTags(c) {
     return;
   }
   if (hint) hint.style.display = "none";
+
+  // Build selected set from c.v4methods (array of names)
+  var selSet = {};
+  if (c.v4methods) {
+    for (var i = 0; i < c.v4methods.length; i++) selSet[c.v4methods[i]] = true;
+  }
+
   var html = '<div class="method-tags">';
-  for (var i = 0; i < methods.length; i++) {
-    var isSel = !!selectedSet[methods[i]];
-    html += '<span class="mtag' + (isSel ? ' sel' : '') + '" data-mname="' + esc(methods[i]) + '">' + esc(methods[i]) + '</span>';
+  for (var j = 0; j < methods.length; j++) {
+    var isSel = !!selSet[methods[j]];
+    html += '<span class="mtag' + (isSel ? ' sel' : '') + '" data-mname="' + esc(methods[j]) + '">' + esc(methods[j]) + '</span>';
   }
   html += '</div>';
   el.innerHTML = html;
+
   var tags = el.querySelectorAll(".mtag");
-  for (var j = 0; j < tags.length; j++) {
+  for (var k = 0; k < tags.length; k++) {
     (function(tag) {
       tag.addEventListener("click", function() {
         var mname = tag.getAttribute("data-mname");
-        var isSel = tag.classList.contains("sel");
-
-        if (isSel) {
-          // Deselect - remove from c.methods
-          tag.classList.remove("sel");
-          c.methods = c.methods.filter(function(m){ return m.name !== mname; });
+        var cc = currentCard();
+        if (!cc) return;
+        if (!cc.v4methods) cc.v4methods = [];
+        var idx = cc.v4methods.indexOf(mname);
+        if (idx >= 0) {
+          // Deselect
+          cc.v4methods.splice(idx, 1);
+          // Clean up v4notes
+          if (cc.v4notes) delete cc.v4notes[mname];
         } else {
-          // Select - add to c.methods
-          tag.classList.add("sel");
-          c.methods.push({ name: mname, strategy: "" });
+          cc.v4methods.push(mname);
         }
         saveStore(store);
-        renderStrategyCards(c);
-        updateProgress(c);
+        renderMethodTags(cc);
+        renderMethodNotes(cc);
+        updateProgress(cc);
         showToast();
       });
-    })(tags[j]);
+    })(tags[k]);
   }
 }
 
-// ========= STRATEGY CARDS (one per selected method) =========
-function renderStrategyCards(c) {
-  var container = document.getElementById("strategy-cards");
-  var emptyHint = document.getElementById("no-strategy-hint");
-  if (!container) return;
-
-  var ms = c.methods || [];
-  if (!ms.length) {
-    container.innerHTML = "";
-    if (emptyHint) emptyHint.style.display = "block";
-    return;
-  }
-  if (emptyHint) emptyHint.style.display = "none";
+// ========= METHOD NOTES =========
+// Render one note field per selected method
+function renderMethodNotes(c) {
+  var el = document.getElementById("method-notes");
+  if (!el) return;
+  var names = c.v4methods || [];
+  if (!names.length) { el.innerHTML = ""; return; }
 
   var html = "";
-  for (var i = 0; i < ms.length; i++) {
-    var m = ms[i];
-    html += '<div class="strategy-card" data-midx="' + i + '">';
-    html += '  <div class="strategy-card-hd">';
-    html += '    <span class="strategy-card-badge">' + esc(m.name) + '</span>';
-    html += '    <span class="strategy-card-num">策略 #' + (i+1) + '</span>';
-    html += '  </div>';
-    html += '  <div class="strategy-card-bd">';
-    html += '    <div class="flbl">解决策略</div>';
-    html += '    <textarea class="fta strat-ta" data-midx="' + i + '" placeholder="说明「' + esc(m.name) + '」如何直接作用于你描述的问题...具体步骤、关键动作、预期产出等">' + esc(m.strategy || "") + '</textarea>';
-    html += '  </div>';
+  for (var i = 0; i < names.length; i++) {
+    var mname = names[i];
+    var note = (c.v4notes && c.v4notes[mname]) || "";
+    html += '<div class="method-note">';
+    html +=   '<div class="method-note-hd">';
+    html +=     '<span class="method-note-badge">' + esc(mname) + '</span>';
+    html +=     '<span style="font-size:11px;color:var(--muted)">方法如何支撑你的策略？</span>';
+    html +=   '</div>';
+    html +=   '<div class="method-note-bd">';
+    html +=     '<div class="flbl">用法备注（选填）</div>';
+    html +=     '<textarea class="fta method-note-ta" data-mname="' + esc(mname) + '" placeholder="例：用「战略地图」厘清华东区市场细分维度，输出3个高潜力客户群...">' + esc(note) + '</textarea>';
+    html +=   '</div>';
     html += '</div>';
   }
-  container.innerHTML = html;
+  el.innerHTML = html;
 
-  // Bind input auto-save on each strategy textarea
-  var tas = container.querySelectorAll(".strat-ta");
-  for (var k = 0; k < tas.length; k++) {
+  var tas = el.querySelectorAll(".method-note-ta");
+  for (var j = 0; j < tas.length; j++) {
     (function(ta) {
       ta.addEventListener("input", function() {
-        var idx = parseInt(ta.getAttribute("data-midx"), 10);
         var cc = currentCard();
-        if (cc && cc.methods && cc.methods[idx]) {
-          cc.methods[idx].strategy = ta.value;
-          clearTimeout(autoSave._tm);
-          autoSave._tm = setTimeout(function(){
-            updateProgress(cc); doSave();
-          }, 600);
-        }
+        if (!cc) return;
+        if (!cc.v4notes) cc.v4notes = {};
+        cc.v4notes[ta.getAttribute("data-mname")] = ta.value;
+        clearTimeout(autoSave._tm);
+        autoSave._tm = setTimeout(function() {
+          updateProgress(cc); doSave();
+        }, 600);
       });
-    })(tas[k]);
+    })(tas[j]);
   }
 }
 
@@ -589,14 +567,10 @@ function collectData() {
   if (v5mp) c.v5mp = v5mp.value;
   if (v5mr) c.v5mr = v5mr.value;
 
-  // Collect strategy data from per-method cards
-  var stratTas = document.querySelectorAll(".strat-ta");
-  for (var si = 0; si < stratTas.length; si++) {
-    var idx = parseInt(stratTas[si].getAttribute("data-midx"), 10);
-    if (c.methods && c.methods[idx]) {
-      c.methods[idx].strategy = stratTas[si].value;
-    }
-  }
+  // v4s is already loaded in renderCanvas, collect it
+  var v4s = document.getElementById("v4s");
+  if (v4s) c.v4s = v4s.value;
+  // v4notes are saved in real-time by input handlers, nothing to collect here
 
   c.depts = [];
   var drs = document.querySelectorAll("#dept-list > div");

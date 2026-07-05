@@ -187,14 +187,13 @@ table.mt td{padding:6px 10px}
 #no-methods-hint{font-size:12px;color:var(--light);margin-top:8px;display:none}
 
 /* Per-method strategy card */
-.strategy-card{background:var(--card);border:1.5px solid var(--accent-border);border-radius:12px;margin-bottom:14px;overflow:hidden;transition:all .2s;animation:cardIn .25s ease}
-.strategy-card:hover{box-shadow:0 4px 16px rgba(13,148,136,.08);border-color:#6ee7b7}
-.strategy-card-hd{display:flex;align-items:center;gap:10px;padding:12px 16px;background:linear-gradient(135deg,var(--accent-bg) 0%,#e0f7f4 100%)}
-.strategy-card-badge{padding:4px 12px;border-radius:20px;background:linear-gradient(135deg,var(--accent),var(--accent-light));color:#fff;font-size:11px;font-weight:700;letter-spacing:.3px;flex-shrink:0}
-.strategy-card-num{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.3px}
-.strategy-card-bd{padding:14px 16px}
-.strategy-card-bd .flbl{margin-bottom:8px}
-.strategy-card-bd textarea{min-height:70px;font-size:13px}
+/* Method note cards: appear after selecting methods in step 4 */
+.method-note{background:var(--card);border:1.5px solid var(--accent-border);border-radius:12px;margin-bottom:12px;overflow:hidden;transition:all .2s;animation:cardIn .25s ease}
+.method-note-hd{display:flex;align-items:center;gap:10px;padding:10px 16px;background:linear-gradient(135deg,var(--accent-bg) 0%,#e0f7f4 100%)}
+.method-note-badge{padding:4px 12px;border-radius:20px;background:linear-gradient(135deg,var(--accent),var(--accent-light));color:#fff;font-size:11px;font-weight:700;letter-spacing:.3px;flex-shrink:0}
+.method-note-bd{padding:12px 16px}
+.method-note-bd .flbl{font-size:12px;margin-bottom:6px;color:var(--muted)}
+.method-note-bd textarea{min-height:56px;font-size:13px}
 @keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
 /* ========= CONTEXT PANEL ========= */
@@ -391,23 +390,28 @@ table.mt td{padding:6px 10px}
 
 <!-- S4 -->
 <div class="step" id="s4">
-<div class="step-hdr"><div class="step-n">4</div><div class="step-info"><h4>选择方法，形成策略</h4><p>从本课程方法工具中选择，为每个方法填写独立策略</p></div><span class="step-arr">&#9660;</span></div>
+<div class="step-hdr"><div class="step-n">4</div><div class="step-info"><h4>制定策略，选择方法</h4><p>先明确你的解决思路，再选方法去落地</p></div><span class="step-arr">&#9660;</span></div>
 <div class="step-bdy">
 <div class="step-bdy-inner">
+
+<!-- Part 1: Write strategy first -->
+<div style="margin-bottom:20px">
+  <div class="flbl">解决策略</div>
+  <div style="font-size:11px;color:var(--light);margin-bottom:8px;letter-spacing:.2px">用你自己的话描述解决思路——不依赖任何方法工具，先想清楚方向和打法</div>
+  <textarea class="fta" id="v4s" placeholder="例如：通过重新定义华东区市场细分标准，将营销资源从泛曝光转向精准触达高潜力客户群体，同时建立区域联动机制..." style="min-height:80px"></textarea>
+</div>
+
+<!-- Part 2: Then select methods -->
 <div style="margin-bottom:14px">
-<div class="flbl">本课程方法工具</div>
-<div style="font-size:11px;color:var(--light);margin-bottom:8px;letter-spacing:.2px">点击下方标签选择适用于你当前问题的方法工具（可多选）</div>
-<div id="method-tags"></div>
-<div id="no-methods-hint">提示：请先让培训管理员配置本课程的方法工具清单。</div>
+  <div class="flbl">选择支撑方法</div>
+  <div style="font-size:11px;color:var(--light);margin-bottom:8px;letter-spacing:.2px">从本课程方法工具中，选择能够支撑上述策略的方法（可多选）。选中的方法下方可备注具体用法。</div>
+  <div id="method-tags"></div>
+  <div id="no-methods-hint">提示：请先让培训管理员配置本课程的方法工具清单。</div>
 </div>
 
-<!-- Strategy cards container: one card per selected method -->
-<div id="strategy-cards"></div>
+<!-- Per-method note fields -->
+<div id="method-notes"></div>
 
-<div id="no-strategy-hint" style="display:none;text-align:center;padding:24px 0">
-  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" style="margin-bottom:8px"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
-  <div style="font-size:13px;color:var(--light)">选择上方方法后，这里会显示对应的策略卡片</div>
-</div>
 </div>
 </div>
 </div>
