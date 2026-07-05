@@ -72,6 +72,14 @@ function doneCount(c) {
   if (c.v2l && c.v2l.trim() && c.v2v && c.v2v.trim()) n++;
   if (c.depts && c.depts.length && c.depts[0] && c.depts[0].name && c.depts[0].name.trim()) n++;
   if (c.v4m && c.v4m.trim() && c.v4s && c.v4s.trim()) n++;
+  // Backward compat: also count new methods array
+  if (!n && c.methods && c.methods.length) {
+    var hasStrat = false;
+    for (var mi = 0; mi < c.methods.length; mi++) {
+      if (c.methods[mi].strategy && c.methods[mi].strategy.trim()) { hasStrat = true; break; }
+    }
+    if (hasStrat) n++;
+  }
   if (c.v5r && c.v5r.trim()) n++;
   return n;
 }
@@ -88,7 +96,7 @@ function updateProgress(c) {
   markStepNum(1, !!(c.v1 && c.v1.trim()));
   markStepNum(2, !!(c.v2l && c.v2l.trim() && c.v2v && c.v2v.trim()));
   markStepNum(3, !!(c.depts && c.depts.length && c.depts[0] && c.depts[0].name && c.depts[0].name.trim()));
-  markStepNum(4, !!(c.v4m && c.v4m.trim() && c.v4s && c.v4s.trim()));
+  markStepNum(4, step4Done(c));
   markStepNum(5, !!(c.v5r && c.v5r.trim()));
 }
 
@@ -97,6 +105,17 @@ function markStepNum(n, ok) {
   if (!el) return;
   if (ok) { el.className = "step-n ok"; el.innerHTML = "&#10003;"; }
   else { el.className = "step-n"; el.textContent = n; }
+}
+
+function step4Done(c) {
+  // New format
+  if (c.methods && c.methods.length) {
+    for (var i = 0; i < c.methods.length; i++) {
+      if (c.methods[i].strategy && c.methods[i].strategy.trim()) return true;
+    }
+  }
+  // Backward compat with old v4m/v4s
+  return !!(c.v4m && c.v4m.trim() && c.v4s && c.v4s.trim());
 }
 
 // ========= LOGIN =========
@@ -192,7 +211,8 @@ function createCard() {
     status: "draft",
     title: "",
     course: store.config.course || "",
-    v1:"", v2l:"", v2v:"", v4m:"", v4s:"",
+    v1:"", v2l:"", v2v:"",
+    methods:[], v4m:"", v4s:"",
     v5r:"", v5mp:"", v5mr:"",
     depts:[{}], tasks:[{}], metrics:[],
     created: now, updated: now
@@ -285,16 +305,12 @@ function renderCanvas() {
   var v1 = document.getElementById("v1");
   var v2l = document.getElementById("v2l");
   var v2v = document.getElementById("v2v");
-  var v4m = document.getElementById("v4m");
-  var v4s = document.getElementById("v4s");
   var v5r = document.getElementById("v5r");
   var v5mp = document.getElementById("v5mp");
   var v5mr = document.getElementById("v5mr");
   if (v1) v1.value = c.v1 || "";
   if (v2l) v2l.value = c.v2l || "";
   if (v2v) v2v.value = c.v2v || "";
-  if (v4m) v4m.value = c.v4m || "";
-  if (v4s) v4s.value = c.v4s || "";
   if (v5r) v5r.value = c.v5r || "";
   if (v5mp) v5mp.value = c.v5mp || "";
   if (v5mr) v5mr.value = c.v5mr || "";
@@ -302,6 +318,7 @@ function renderCanvas() {
   renderContextPanel();
   updateHintsFromConfig();
   renderMethodTags(c);
+  renderStrategyCards(c);
   renderDepts(c);
   renderTasks(c);
   renderMetrics(c);
@@ -348,7 +365,24 @@ function renderMethodTags(c) {
   var hint = document.getElementById("no-methods-hint");
   if (!el) return;
   var methods = store.config.methods || [];
-  var selected = (c.v4m || "").split(/[\s·，,]+/).filter(function(s){ return s.trim(); });
+
+  // Ensure c.methods is an array
+  if (!c.methods) c.methods = [];
+
+  // Build selected set from c.methods array
+  var selectedSet = {};
+  for (var s = 0; s < c.methods.length; s++) {
+    selectedSet[c.methods[s].name] = true;
+  }
+
+  // Backward compat: if old v4m exists, migrate to new format
+  if (!c.methods.length && c.v4m && c.v4m.trim()) {
+    var oldNames = c.v4m.split(/[\s·，,]+/).filter(function(s){ return s.trim(); });
+    for (var oi = 0; oi < oldNames.length; oi++) {
+      c.methods.push({ name: oldNames[oi].trim(), strategy: c.v4s || "" });
+    }
+    saveStore(store);
+  }
 
   if (!methods.length) {
     el.innerHTML = "";
@@ -358,25 +392,82 @@ function renderMethodTags(c) {
   if (hint) hint.style.display = "none";
   var html = '<div class="method-tags">';
   for (var i = 0; i < methods.length; i++) {
-    var isSel = selected.indexOf(methods[i]) >= 0;
+    var isSel = !!selectedSet[methods[i]];
     html += '<span class="mtag' + (isSel ? ' sel' : '') + '" data-mname="' + esc(methods[i]) + '">' + esc(methods[i]) + '</span>';
   }
   html += '</div>';
   el.innerHTML = html;
   var tags = el.querySelectorAll(".mtag");
   for (var j = 0; j < tags.length; j++) {
-    tags[j].addEventListener("click", function() {
-      this.classList.toggle("sel");
-      var names = [];
-      var selTags = document.querySelectorAll("#method-tags .mtag.sel");
-      for (var k = 0; k < selTags.length; k++) names.push(selTags[k].getAttribute("data-mname"));
-      c.v4m = names.join(" · ");
-      var v4mEl = document.getElementById("v4m");
-      if (v4mEl) v4mEl.value = c.v4m;
-      saveStore(store);
-      updateProgress(c);
-      showToast();
-    });
+    (function(tag) {
+      tag.addEventListener("click", function() {
+        var mname = tag.getAttribute("data-mname");
+        var isSel = tag.classList.contains("sel");
+
+        if (isSel) {
+          // Deselect - remove from c.methods
+          tag.classList.remove("sel");
+          c.methods = c.methods.filter(function(m){ return m.name !== mname; });
+        } else {
+          // Select - add to c.methods
+          tag.classList.add("sel");
+          c.methods.push({ name: mname, strategy: "" });
+        }
+        saveStore(store);
+        renderStrategyCards(c);
+        updateProgress(c);
+        showToast();
+      });
+    })(tags[j]);
+  }
+}
+
+// ========= STRATEGY CARDS (one per selected method) =========
+function renderStrategyCards(c) {
+  var container = document.getElementById("strategy-cards");
+  var emptyHint = document.getElementById("no-strategy-hint");
+  if (!container) return;
+
+  var ms = c.methods || [];
+  if (!ms.length) {
+    container.innerHTML = "";
+    if (emptyHint) emptyHint.style.display = "block";
+    return;
+  }
+  if (emptyHint) emptyHint.style.display = "none";
+
+  var html = "";
+  for (var i = 0; i < ms.length; i++) {
+    var m = ms[i];
+    html += '<div class="strategy-card" data-midx="' + i + '">';
+    html += '  <div class="strategy-card-hd">';
+    html += '    <span class="strategy-card-badge">' + esc(m.name) + '</span>';
+    html += '    <span class="strategy-card-num">策略 #' + (i+1) + '</span>';
+    html += '  </div>';
+    html += '  <div class="strategy-card-bd">';
+    html += '    <div class="flbl">解决策略</div>';
+    html += '    <textarea class="fta strat-ta" data-midx="' + i + '" placeholder="说明「' + esc(m.name) + '」如何直接作用于你描述的问题...具体步骤、关键动作、预期产出等">' + esc(m.strategy || "") + '</textarea>';
+    html += '  </div>';
+    html += '</div>';
+  }
+  container.innerHTML = html;
+
+  // Bind input auto-save on each strategy textarea
+  var tas = container.querySelectorAll(".strat-ta");
+  for (var k = 0; k < tas.length; k++) {
+    (function(ta) {
+      ta.addEventListener("input", function() {
+        var idx = parseInt(ta.getAttribute("data-midx"), 10);
+        var cc = currentCard();
+        if (cc && cc.methods && cc.methods[idx]) {
+          cc.methods[idx].strategy = ta.value;
+          clearTimeout(autoSave._tm);
+          autoSave._tm = setTimeout(function(){
+            updateProgress(cc); doSave();
+          }, 600);
+        }
+      });
+    })(tas[k]);
   }
 }
 
@@ -486,8 +577,6 @@ function collectData() {
   var v1 = document.getElementById("v1");
   var v2l = document.getElementById("v2l");
   var v2v = document.getElementById("v2v");
-  var v4m = document.getElementById("v4m");
-  var v4s = document.getElementById("v4s");
   var v5r = document.getElementById("v5r");
   var v5mp = document.getElementById("v5mp");
   var v5mr = document.getElementById("v5mr");
@@ -496,11 +585,18 @@ function collectData() {
   if (v1) c.v1 = v1.value;
   if (v2l) c.v2l = v2l.value;
   if (v2v) c.v2v = v2v.value;
-  if (v4m) c.v4m = v4m.value;
-  if (v4s) c.v4s = v4s.value;
   if (v5r) c.v5r = v5r.value;
   if (v5mp) c.v5mp = v5mp.value;
   if (v5mr) c.v5mr = v5mr.value;
+
+  // Collect strategy data from per-method cards
+  var stratTas = document.querySelectorAll(".strat-ta");
+  for (var si = 0; si < stratTas.length; si++) {
+    var idx = parseInt(stratTas[si].getAttribute("data-midx"), 10);
+    if (c.methods && c.methods[idx]) {
+      c.methods[idx].strategy = stratTas[si].value;
+    }
+  }
 
   c.depts = [];
   var drs = document.querySelectorAll("#dept-list > div");

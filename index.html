@@ -186,6 +186,17 @@ table.mt td{padding:6px 10px}
 .mtag.sel{background:linear-gradient(135deg,var(--accent),var(--accent-light));color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(13,148,136,.25)}
 #no-methods-hint{font-size:12px;color:var(--light);margin-top:8px;display:none}
 
+/* Per-method strategy card */
+.strategy-card{background:var(--card);border:1.5px solid var(--accent-border);border-radius:12px;margin-bottom:14px;overflow:hidden;transition:all .2s;animation:cardIn .25s ease}
+.strategy-card:hover{box-shadow:0 4px 16px rgba(13,148,136,.08);border-color:#6ee7b7}
+.strategy-card-hd{display:flex;align-items:center;gap:10px;padding:12px 16px;background:linear-gradient(135deg,var(--accent-bg) 0%,#e0f7f4 100%)}
+.strategy-card-badge{padding:4px 12px;border-radius:20px;background:linear-gradient(135deg,var(--accent),var(--accent-light));color:#fff;font-size:11px;font-weight:700;letter-spacing:.3px;flex-shrink:0}
+.strategy-card-num{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.3px}
+.strategy-card-bd{padding:14px 16px}
+.strategy-card-bd .flbl{margin-bottom:8px}
+.strategy-card-bd textarea{min-height:70px;font-size:13px}
+@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
 /* ========= CONTEXT PANEL ========= */
 .ctx-panel{background:linear-gradient(135deg,var(--accent-bg) 0%,#e0f7f4 100%);border:1px solid var(--accent-border);border-radius:14px;margin-bottom:24px;overflow:hidden;transition:all .25s}
 .ctx-panel:hover{box-shadow:0 4px 16px rgba(13,148,136,.1)}
@@ -380,7 +391,7 @@ table.mt td{padding:6px 10px}
 
 <!-- S4 -->
 <div class="step" id="s4">
-<div class="step-hdr"><div class="step-n">4</div><div class="step-info"><h4>选择方法，形成策略</h4><p>从本课程方法工具中选择，形成解决策略</p></div><span class="step-arr">&#9660;</span></div>
+<div class="step-hdr"><div class="step-n">4</div><div class="step-info"><h4>选择方法，形成策略</h4><p>从本课程方法工具中选择，为每个方法填写独立策略</p></div><span class="step-arr">&#9660;</span></div>
 <div class="step-bdy">
 <div class="step-bdy-inner">
 <div style="margin-bottom:14px">
@@ -389,8 +400,14 @@ table.mt td{padding:6px 10px}
 <div id="method-tags"></div>
 <div id="no-methods-hint">提示：请先让培训管理员配置本课程的方法工具清单。</div>
 </div>
-<div style="margin-bottom:14px"><div class="flbl">已选方法</div><input class="fti" id="v4m" placeholder="点击上方标签选择方法..." readonly style="background:#f8fafc;cursor:default"></div>
-<div><div class="flbl">解决策略</div><textarea class="fta" id="v4s" placeholder="说明所选方法如何直接作用于你描述的问题..."></textarea></div>
+
+<!-- Strategy cards container: one card per selected method -->
+<div id="strategy-cards"></div>
+
+<div id="no-strategy-hint" style="display:none;text-align:center;padding:24px 0">
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" style="margin-bottom:8px"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+  <div style="font-size:13px;color:var(--light)">选择上方方法后，这里会显示对应的策略卡片</div>
+</div>
 </div>
 </div>
 </div>
