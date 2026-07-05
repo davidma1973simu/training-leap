@@ -659,6 +659,86 @@ function doExportJSON() {
   URL.revokeObjectURL(url);
 }
 
+function doSubmitCode() {
+  collectData();
+  var c = currentCard();
+  if (!c) {
+    toast("请先创建或选择一个行动计划");
+    return;
+  }
+
+  // Build submission data
+  var submitData = {
+    user: { name: store.user ? store.user.name : "学员", comp: store.user ? store.user.comp : "" },
+    card: c,
+    config: {
+      program: store.config.program || "",
+      course: store.config.course || ""
+    },
+    submittedAt: iso()
+  };
+
+  var jsonStr = JSON.stringify(submitData, null, 2);
+
+  // Copy to clipboard
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(jsonStr).then(function() {
+      showSubmitModal(jsonStr);
+    });
+  } else {
+    // Fallback: show modal with text to copy manually
+    showSubmitModal(jsonStr);
+  }
+}
+
+// Show submission code in a modal for user to copy
+function showSubmitModal(jsonStr) {
+  // Remove existing modal if any
+  var existing = document.getElementById("submit-modal");
+  if (existing) existing.remove();
+
+  var overlay = document.createElement("div");
+  overlay.id = "submit-modal";
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px";
+  overlay.innerHTML =
+    '<div style="background:#fff;border-radius:16px;width:540px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.15);padding:28px">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">' +
+        '<h3 style="font-size:17px;font-weight:700;color:#0f172a">提交码已生成</h3>' +
+        '<button id="submit-modal-close" style="background:none;border:none;font-size:22px;cursor:pointer;color:#94a3b8;line-height:1">&times;</button>' +
+      '</div>' +
+      '<p style="font-size:13px;color:#64748b;margin-bottom:14px;line-height:1.6">将下方内容复制后，发送给培训管理员（HR 或培训师），管理员将在后台导入查看你的进度。</p>' +
+      '<textarea readonly style="width:100%;min-height:160px;padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:monospace;font-size:11px;background:#f8fafc;color:#334155;resize:vertical;line-height:1.6;word-break:break-all" onclick="this.select()">'+ jsonStr.replace(/</g,"&lt;") +'</textarea>' +
+      '<div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">' +
+        '<button id="btn-copy-submit" style="padding:9px 22px;background:#0f172a;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">复制到剪贴板</button>' +
+        '<button id="btn-close-submit" style="padding:9px 18px;background:#fff;color:#64748b;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">关闭</button>' +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(overlay);
+
+  document.getElementById("submit-modal-close").onclick = function(){overlay.remove()};
+  document.getElementById("btn-close-submit").onclick = function(){overlay.remove()};
+  document.getElementById("btn-copy-submit").onclick = function(){
+    navigator.clipboard.writeText(jsonStr).then(function(){
+      var btn = document.getElementById("btn-copy-submit");
+      btn.textContent = "已复制!";
+      btn.style.background = "#059669";
+      setTimeout(function(){btn.textContent = "复制到剪贴板";btn.style.background = "#0f172a"},1500);
+    }).catch(function(){
+      // Fallback: select all text
+      var ta = overlay.querySelector("textarea");
+      ta.select();
+      document.execCommand("copy");
+    });
+  };
+
+  // Close on backdrop click
+  overlay.addEventListener("click", function(e){
+    if(e.target === overlay) overlay.remove();
+  });
+}
+window.showSubmitModal = showSubmitModal;
+
 // ========= INIT =========
 function initBindings() {
   var bLogin = document.getElementById("b-login");
@@ -680,6 +760,9 @@ function initBindings() {
 
   var bExport = document.getElementById("b-export");
   if (bExport) bExport.addEventListener("click", doExportPDF);
+
+  var bSubmit = document.getElementById("b-submit");
+  if (bSubmit) bSubmit.addEventListener("click", doSubmitCode);
 
   var bLogo = document.getElementById("b-logo");
   if (bLogo) bLogo.addEventListener("click", function() { switchPage("p-dash"); });

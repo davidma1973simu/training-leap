@@ -11,6 +11,8 @@
   --bg:#f8fafc;--card:#fff;--border:#e2e8f0;
   --accent:#0d9488;--accent-bg:#f0fdfa;
   --ok:#059669;--ok-bg:#ecfdf5;
+  --amber:#d97706;--amber-bg:#fef3c7;
+  --hr-color:#3b82f6;--hr-bg:#eff6ff;
 }
 body{font-family:-apple-system,"PingFang SC","Helvetica Neue","Noto Sans SC",sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased}
 
@@ -42,13 +44,20 @@ body{font-family:-apple-system,"PingFang SC","Helvetica Neue","Noto Sans SC",san
 /* CONFIG CARD */
 .ccard{background:var(--card);border:1px solid var(--border);border-radius:16px;margin-bottom:20px;overflow:hidden;transition:border-color .2s}
 .ccard:hover{border-color:#cbd5e1}
-.cchead{display:flex;align-items:center;justify-content:space-between;padding:18px 24px 14px;border-bottom:1px solid #f1f5f9}
+.cchead{display:flex;align-items:center;justify-content:space-between;padding:18px 24px 14px;border-bottom:1px solid #f1f5f9;flex-wrap:wrap;gap:8px}
 .cch-left{display:flex;align-items:center;gap:12px}
 .cch-num{width:26px;height:26px;border-radius:8px;background:var(--ink);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .cch-title{font-size:15px;font-weight:700;color:var(--ink)}
-.cch-status{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+
+/* Status badge */
+.cch-status-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.cch-status{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
 .status-empty{background:#f1f5f9;color:var(--light)}
-.status-ok{background:var(--ok-bg);color:var(--ok)}
+.status-saved{background:var(--ok-bg);color:var(--ok)}
+.status-consensus{background:linear-gradient(135deg,var(--ok-bg),#d1fae5);color:var(--ok)}
+.cch-meta{font-size:10px;color:var(--light)}
+
+/* Card body */
 .ccbody{padding:20px 24px}
 
 /* Field group */
@@ -74,6 +83,21 @@ textarea.fi{min-height:72px;line-height:1.65}
 .mtag .rmx{background:none;border:none;color:var(--accent);opacity:.5;cursor:pointer;font-size:14px;padding:0 1px;line-height:1}
 .mtag .rmx:hover{opacity:1}
 
+/* CONSENSUS AREA — new */
+.consensus-area{margin-top:18px;padding-top:16px;border-top:1px dashed var(--border)}
+.consensus-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.party-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:8px 12px;background:var(--bg);border-radius:10px;transition:all .15s}
+.party-row:last-child{margin-bottom:0}
+.party-role{font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;flex-shrink:0;white-space:nowrap}
+.role-hr{background:var(--hr-bg);color:var(--hr-color)}
+.role-trainer{background:var(--amber-bg);color:var(--amber)}
+.party-info{font-size:12px;color:var(--light);flex:1}
+.party-check{width:18px;height:18px;border:2px solid var(--border);border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.party-check.checked{background:var(--ok);border-color:var(--ok)}
+.party-check.checked svg{opacity:1}
+.party-check svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2.5;opacity:0;transition:opacity .15s}
+.all-consensus{margin-top:10px;text-align:center;font-size:12px;font-weight:600;color:var(--ok);padding:6px 14px;background:var(--ok-bg);border-radius:20px;display:none}
+
 /* Actions */
 .actions{display:flex;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid #f1f5f9}
 .btn-pri{padding:10px 28px;background:var(--ink);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s}
@@ -97,6 +121,13 @@ textarea.fi{min-height:72px;line-height:1.65}
 .pbar{height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;width:80px;display:inline-block;vertical-align:middle}
 .pbar>div{height:100%;background:var(--accent);border-radius:3px;transition:width .3s}
 .st-empty{text-align:center;padding:48px 20px;color:var(--light)}
+
+/* Import area */
+.import-area{margin-top:20px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 24px}
+.import-area h3{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:8px}
+.import-area p{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5}
+.import-textarea{width:100%;min-height:80px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:12px;font-family:monospace;background:#fafbfc;resize:vertical;margin-bottom:10px}
+.import-textarea:focus{outline:none;border-color:var(--accent);background:#fff}
 
 /* Tab content */
 .tab-content{display:none}
@@ -123,7 +154,7 @@ textarea.fi{min-height:72px;line-height:1.65}
   <div class="tb-right">
     <a href="index.html" class="tb-link">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      学员端
+      返回主页
     </a>
   </div>
 </div>
@@ -151,7 +182,7 @@ textarea.fi{min-height:72px;line-height:1.65}
 
     <div class="page-header">
       <h1>培训项目配置</h1>
-      <p>配置完成后，学员端将自动加载这些信息。所有配置保存在本地浏览器中。</p>
+      <p>HR 与培训师协作配置培训项目。每张卡片记录编辑者和共识状态。所有配置保存在本机浏览器中。</p>
     </div>
 
     <!-- Card 1: 目标受众 -->
@@ -161,7 +192,10 @@ textarea.fi{min-height:72px;line-height:1.65}
         <div class="cch-num">1</div>
         <span class="cch-title">目标受众</span>
       </div>
-      <span class="cch-status status-empty" id="status-audience">未填写</span>
+      <div class="cch-status-wrap">
+        <div class="cch-status status-empty" id="status-audience">未填写</div>
+        <div class="cch-meta" id="meta-audience"></div>
+      </div>
     </div>
     <div class="ccbody">
       <div class="fg">
@@ -192,6 +226,8 @@ textarea.fi{min-height:72px;line-height:1.65}
         </div>
         <textarea class="fi fi-sm" id="cfg-aud-rhythm" placeholder="例如：碎片化时间为主，会议密集，周末偶尔可投入"></textarea>
       </div>
+      <!-- Consensus -->
+      <div class="consensus-area" id="consensus-audience"></div>
     </div>
     </div>
 
@@ -202,7 +238,10 @@ textarea.fi{min-height:72px;line-height:1.65}
         <div class="cch-num">2</div>
         <span class="cch-title">培训主题需求与目的</span>
       </div>
-      <span class="cch-status status-empty" id="status-purpose">未填写</span>
+      <div class="cch-status-wrap">
+        <div class="cch-status status-empty" id="status-purpose">未填写</div>
+        <div class="cch-meta" id="meta-purpose"></div>
+      </div>
     </div>
     <div class="ccbody">
       <div class="fg">
@@ -234,6 +273,7 @@ textarea.fi{min-height:72px;line-height:1.65}
         </div>
         <textarea class="fi fi-sm" id="cfg-pur-change" placeholder="例如：3个月内至少解决一个长期悬而未决的跨部门问题..."></textarea>
       </div>
+      <div class="consensus-area" id="consensus-purpose"></div>
     </div>
     </div>
 
@@ -244,7 +284,10 @@ textarea.fi{min-height:72px;line-height:1.65}
         <div class="cch-num">3</div>
         <span class="cch-title">项目基本信息</span>
       </div>
-      <span class="cch-status status-empty" id="status-project">未填写</span>
+      <div class="cch-status-wrap">
+        <div class="cch-status status-empty" id="status-project">未填写</div>
+        <div class="cch-meta" id="meta-project"></div>
+      </div>
     </div>
     <div class="ccbody">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
@@ -257,6 +300,7 @@ textarea.fi{min-height:72px;line-height:1.65}
           <input class="fi" id="cfg-course" placeholder="例如：战略执行与全局经营">
         </div>
       </div>
+      <div class="consensus-area" id="consensus-project"></div>
     </div>
     </div>
 
@@ -267,7 +311,10 @@ textarea.fi{min-height:72px;line-height:1.65}
         <div class="cch-num">4</div>
         <span class="cch-title">方法工具清单</span>
       </div>
-      <span class="cch-status status-empty" id="status-methods">未填写</span>
+      <div class="cch-status-wrap">
+        <div class="cch-status status-empty" id="status-methods">未填写</div>
+        <div class="cch-meta" id="meta-methods"></div>
+      </div>
     </div>
     <div class="ccbody">
       <div class="fg-sub" style="margin-bottom:12px">本课程涉及的所有方法工具，学员在行动画布步骤4中选择使用。支持批量输入（逗号、分号、换行分隔）。</div>
@@ -275,6 +322,7 @@ textarea.fi{min-height:72px;line-height:1.65}
         <input type="text" id="method-text-input" placeholder="输入方法工具名称，按 Enter 添加">
       </div>
       <div class="mtags" id="configured-methods-list"></div>
+      <div class="consensus-area" id="consensus-methods"></div>
     </div>
     </div>
 
@@ -289,16 +337,25 @@ textarea.fi{min-height:72px;line-height:1.65}
     <div class="tab-content" id="tab-students">
       <div class="page-header">
         <h1>学员进度追踪</h1>
-        <p>查看所有学员的行动计划完成进度。</p>
+        <p>查看所有学员的行动计划完成进度。<br style="margin-bottom:6px"><strong style="color:var(--accent)">提示：</strong>请让每位学员在学员端点击「生成提交码」，然后将提交码粘贴到下方导入区域。</p>
       </div>
+
       <div class="st-table">
         <table>
-          <thead><tr><th>公司/项目</th><th>计划标题</th><th>状态</th><th>进度</th><th>最后更新</th></tr></thead>
+          <thead><tr><th>姓名</th><th>公司/项目</th><th>计划标题</th><th>状态</th><th>进度</th><th>最后更新</th></tr></thead>
           <tbody id="student-tbody"></tbody>
         </table>
       </div>
       <div class="st-empty" id="student-empty" style="display:none">
-        <p style="font-size:14px;color:var(--light)">暂无学员数据</p>
+        <p style="font-size:14px;color:var(--light)">暂无学员数据<br><br>请让学员在学员端点击「生成提交码」，然后在此导入</p>
+      </div>
+
+      <!-- Import Area -->
+      <div class="import-area">
+        <h3>导入学员数据</h3>
+        <p>将学员端生成的提交码粘贴到下方，即可在后台看到该学员的进度。</p>
+        <textarea class="import-textarea" id="import-data" placeholder="粘贴学员的提交码（JSON 格式）..."></textarea>
+        <button class="btn-pri" id="btn-import" style="font-size:13px;padding:8px 20px">导入数据</button>
       </div>
     </div>
 
@@ -318,6 +375,22 @@ function saveStore(d){try{localStorage[KEY]=JSON.stringify(d)}catch(e){}}
 var S = loadStore();
 if(!S.config) S.config = {};
 if(!S.cards) S.cards = {};
+if(!S.configMeta) S.configMeta = {}; // Track per-card edit history & consensus
+
+// Current role selector
+var myRole = localStorage.getItem("tl_role") || "hr"; // "hr" or "trainer"
+
+/* ===== ROLE SELECTOR ===== */
+
+function initRoleSelector(){
+  // We'll add a small role switcher in the topbar area later
+}
+
+function setRole(role){
+  myRole = role;
+  localStorage.setItem("tl_role", role);
+  // Update UI if needed
+}
 
 /* ===== STATUS HELPERS ===== */
 
@@ -336,15 +409,41 @@ function hasMethods(){
   return Array.isArray(S.config.methods)&&S.config.methods.length>0;
 }
 
+// Card key → field check mapping
+var cardChecks = {
+  audience: { check: hasAudience, fields: ["audience"] },
+  purpose: { check: hasPurpose, fields: ["purpose"] },
+  project: { check: hasProject, fields: ["program", "course"] },
+  methods: { check: hasMethods, fields: [] }
+};
+
 function updateStatus(id, filled){
   var el=document.getElementById("status-"+id);
+  var metaEl=document.getElementById("meta-"+id);
   if(!el)return;
-  if(filled){
-    el.className="cch-status status-ok";
+
+  var m = S.configMeta[id] || {};
+  var consensusReached = !!(m.hrConfirmed && m.trainerConfirmed);
+
+  if(consensusReached){
+    el.className="cch-status status-consensus";
+    el.textContent="已共识";
+  } else if(filled){
+    el.className="cch-status status-saved";
     el.textContent="已保存";
-  }else{
+  } else {
     el.className="cch-status status-empty";
     el.textContent="未填写";
+  }
+
+  // Meta line: who edited when
+  if(metaEl && m.lastEditor){
+    var d = m.lastEditAt ? new Date(m.lastEditAt) : null;
+    var dtStr = d ? fmtDate(d) : "";
+    var roleName = m.lastEditor === "hr" ? "甲方HR" : "培训师";
+    metaEl.textContent = roleName + " 编辑 · " + dtStr;
+  } else if(metaEl) {
+    metaEl.textContent = "";
   }
 }
 
@@ -353,6 +452,72 @@ function refreshAllStatus(){
   updateStatus("purpose",hasPurpose());
   updateStatus("project",hasProject());
   updateStatus("methods",hasMethods());
+
+  // Also re-render all consensus areas
+  renderAllConsensus();
+}
+
+/* ===== CONSENSUS RENDERING ===== */
+
+function renderConsensus(cardKey, containerId){
+  var container = document.getElementById(containerId || ("consensus-" + cardKey));
+  if(!container) return;
+
+  var m = S.configMeta[cardKey] || {};
+
+  var html = '<div class="consensus-label">双方确认状态</div>';
+
+  // HR row
+  html += '<div class="party-row">';
+  html += '  <span class="party-role role-hr">甲方 HR</span>';
+  html += '  <span class="party-info">' + (m.hrConfirmed ? '<span style="color:var(--ok);font-weight:500">已确认</span>' : '待确认') + '</span>';
+  html += '  <div class="party-check' + (m.hrConfirmed ? ' checked' : '') + '" onclick="toggleConfirm(\'' + cardKey + '\',\'hr\')" tabindex="0">';
+  html += '    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
+  html += '  </div>';
+  html += '</div>';
+
+  // Trainer row
+  html += '<div class="party-row">';
+  html += '  <span class="party-role role-trainer">培训师</span>';
+  html += '  <span class="party-info">' + (m.trainerConfirmed ? '<span style="color:var(--ok);font-weight:500">已确认</span>' : '待确认') + '</span>';
+  html += '  <div class="party-check' + (m.trainerConfirmed ? ' checked' : '') + '" onclick="toggleConfirm(\'' + cardKey + '\',\'trainer\')" tabindex="0">';
+  html += '    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
+  html += '  </div>';
+  html += '</div>';
+
+  // All consensus banner
+  if(m.hrConfirmed && m.trainerConfirmed){
+    html += '<div class="all-consensus" style="display:block">双方已达成共识</div>';
+  }
+
+  container.innerHTML = html;
+
+  // Bind keyboard accessibility
+  var checks = container.querySelectorAll(".party-check");
+  checks.forEach(function(chk){
+    chk.addEventListener("keydown", function(e){
+      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); this.click(); }
+    });
+  });
+}
+
+window.toggleConfirm = function(cardKey, party){
+  if(!S.configMeta[cardKey]) S.configMeta[cardKey] = {};
+  var was = !!S.configMeta[cardKey][party + "Confirmed"];
+  S.configMeta[cardKey][party + "Confirmed"] = !was;
+  S.configMeta[cardKey][party + "ConfirmBy"] = myRole;
+  S.configMeta[cardKey][party + "ConfirmAt"] = new Date().toISOString();
+  saveStore(S);
+  renderConsensus(cardKey);
+  refreshAllStatus();
+  toast(was ? "已取消确认" : "已确认");
+};
+
+function renderAllConsensus(){
+  renderConsensus("audience");
+  renderConsensus("purpose");
+  renderConsensus("project");
+  renderConsensus("methods");
 }
 
 /* ===== LOAD FIELDS ===== */
@@ -398,29 +563,44 @@ function doSave(){
   S.config.program=gvv("cfg-program");
   S.config.course=gvv("cfg-course");
 
-  // methods already managed by addMethod/rmMethod
+  // Record edit metadata for each card that changed
+  recordEditMeta("audience", hasAudience());
+  recordEditMeta("purpose", hasPurpose());
+  recordEditMeta("project", hasProject());
+  recordEditMeta("methods", hasMethods());
 
-  S.savedAt=new Date().toISOString();
   saveStore(S);
   refreshAllStatus();
-  toast("已保存");
+  toast("已保存 · " + (myRole === "hr" ? "甲方HR" : "培训师"));
 }
 function gvv(id){var el=document.getElementById(id);return el?el.value.trim():""}
+
+function recordEditMeta(cardKey, hasContent){
+  if(!hasContent) return;
+  if(!S.configMeta[cardKey]) S.configMeta[cardKey] = {};
+  S.configMeta[cardKey].lastEditor = myRole;
+  S.configMeta[cardKey].lastEditAt = new Date().toISOString();
+}
 
 /* ===== EXPORT ===== */
 
 function doExport(){
-  var d={
-    program:S.config.program||"",
-    course:S.config.course||"",
-    audience:S.config.audience||{},
-    purpose:S.config.purpose||{},
-    methods:S.config.methods||[],
-    savedAt:S.savedAt||null
+  var exportData = {
+    config: {
+      program:S.config.program||"",
+      course:S.config.course||"",
+      audience:S.config.audience||{},
+      purpose:S.config.purpose||{},
+      methods:S.config.methods||[]
+    },
+    consensus: S.configMeta || {},
+    savedAt:S.savedAt||null,
+    exportedAt: new Date().toISOString()
   };
-  var blob=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});
+  var blob=new Blob([JSON.stringify(exportData,null,2)],{type:"application/json"});
   var url=URL.createObjectURL(blob);
-  var a=document.createElement("a");a.href=url;a.download="action-canvas-config.json";a.click();URL.revokeObjectURL(url);
+  var a=document.createElement("a");a.href=url;a.download="training-leap-config.json";a.click();URL.revokeObjectURL(url);
+  toast("导出成功");
 }
 
 /* ===== METHODS ===== */
@@ -460,6 +640,58 @@ function addMethod(){
   renderMethods();refreshAllStatus();
 }
 
+/* ===== IMPORT STUDENT DATA ===== */
+
+function doImport(){
+  var ta = document.getElementById("import-data");
+  if(!ta) return;
+  var raw = ta.value.trim();
+  if(!raw){toast("请先粘贴提交码");return;}
+
+  try{
+    var data = JSON.parse(raw);
+
+    // Expected format: { user: {...}, cards: [...], config: {...} }
+    if(!data.user || !data.user.name){
+      toast("无效的提交码格式：缺少用户信息");return;
+    }
+
+    var comp = data.user.comp || "未知项目";
+    if(!S.cards[comp]) S.cards[comp] = [];
+
+    // Check if already imported (by card ID)
+    var existingIds = S.cards[comp].map(function(c){return c.id;});
+
+    if(data.card){
+      // Single card submission
+      if(existingIds.indexOf(data.card.id) >= 0){
+        // Update existing
+        var idx = existingIds.indexOf(data.card.id);
+        S.cards[comp][idx] = data.card;
+      } else {
+        S.cards[comp].push(data.card);
+      }
+    }
+
+    // If multiple cards array provided
+    if(data.cards && Array.isArray(data.cards)){
+      data.cards.forEach(function(c){
+        if(existingIds.indexOf(c.id) < 0){
+          S.cards[comp].push(c);
+        }
+      });
+    }
+
+    saveStore(S);
+    renderStudents();
+    ta.value = "";
+    toast("导入成功：" + (data.user.name || "学员") + " 的数据");
+
+  } catch(e){
+    toast("解析失败：不是有效的 JSON 数据");
+  }
+}
+
 /* ===== TAB ===== */
 
 window.switchTab=function(name,trigger){
@@ -479,11 +711,13 @@ function renderStudents(){
   Object.keys(S.cards||{}).forEach(function(comp){
     (S.cards[comp]||[]).forEach(function(c){
       rows.push({
+        name: c.userName || comp.split("|")[0] || "未知",
         comp:comp,
         title:c.title||(c.v1?c.v1.slice(0,35)+"\u2026":"未命名"),
         status:c.status||"draft",
         pct:Math.round(doneCount(c)/5*100),
-        updated:c.updated||c.created
+        updated:c.updated||c.created,
+        id: c.id
       });
     });
   });
@@ -496,9 +730,10 @@ function renderStudents(){
     else if(r.status==="active"){bg="#eff6ff";col="#2563eb";lb="\u8fdb\u884c\u4e2d"}
     else{bg="#f8fafc";col="#64748b";lb="\u8349\u7a3f"};
     var d=r.updated?new Date(r.updated):null;
-    var dt=d?d.getFullYear()+"/"+pad(d.getMonth()+1)+"/"+pad(d.getDate()):"\u2014";
+    var dt=d?fmtDate(d):"\u2014";
     html+='<tr>'+
-      '<td style="font-weight:600">'+esc(r.comp)+'</td>'+
+      '<td style="font-weight:600">'+esc(r.name)+'</td>'+
+      '<td>'+esc(r.comp)+'</td>'+
       '<td>'+esc(r.title)+'</td>'+
       '<td><span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:500;background:'+bg+';color:'+col+'">'+lb+'</span></td>'+
       '<td><div class="pbar"><div style="width:'+r.pct+'%"></div></div> '+r.pct+'%</td>'+
@@ -513,11 +748,14 @@ function doneCount(c){
   if(c.v1&&c.v1.trim())n++;
   if(c.v2l&&c.v2l.trim()&&c.v2v&&c.v2v.trim())n++;
   if(c.depts&&c.depts[0]&&c.depts[0].name&&c.depts[0].name.trim())n++;
-  if(c.v4m&&c.v4m.trim()&&c.v4s&&c.v4s.trim())n++;
+  if((c.v4s&&c.v4s.trim()&&(c.v4methods&&c.v4methods.length))||(c.methods&&c.methods.length))n++;
   if(c.v5r&&c.v5r.trim())n++;
   return n;
 }
 function pad(n){return String(n).padStart(2,"0")}
+function fmtDate(d){
+  return d.getFullYear()+"/"+pad(d.getMonth()+1)+"/"+pad(d.getDate())+" "+pad(d.getHours())+":"+pad(d.getMinutes());
+}
 function esc(s){var d=document.createElement("div");d.textContent=s||"";return d.innerHTML}
 
 /* ===== TOAST ===== */
@@ -534,6 +772,7 @@ function toast(msg){
 
 document.getElementById("btn-save").addEventListener("click",doSave);
 document.getElementById("btn-export").addEventListener("click",doExport);
+document.getElementById("btn-import").addEventListener("click",doImport);
 
 var methodInput=document.getElementById("method-text-input");
 if(methodInput){
