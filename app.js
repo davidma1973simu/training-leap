@@ -274,9 +274,11 @@ function renderCanvas() {
 
   var st = c.status || "draft";
   var tn = st === "done" ? "已完成" : (st === "active" ? "进行中" : "草稿");
-  var tc = st === "done" ? "tag-x" : (st === "active" ? "tag-a" : "tag-d");
   var cStatus = document.getElementById("c-status");
-  if (cStatus) cStatus.innerHTML = '<span class="tag ' + tc + '">' + tn + '</span>';
+  if (cStatus) {
+    cStatus.textContent = tn;
+    cStatus.className = "status-badge " + (st === "done" ? "done" : (st === "active" ? "open" : ""));
+  }
   var bToggle = document.getElementById("b-toggle");
   if (bToggle) bToggle.textContent = st === "done" ? "标记为进行中" : "标记为已完成";
 
