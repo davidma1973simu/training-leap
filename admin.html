@@ -14,7 +14,7 @@
   --amber:#d97706;--amber-bg:#fef3c7;
   --hr-color:#3b82f6;--hr-bg:#eff6ff;
 }
-body{font-family:-apple-system,"PingFang SC","Helvetica Neue","Noto Sans SC",sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased}
+body{font-family:-apple-system,"PingFang SC","Helvetica Neue","Noto Sans SC",sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased;overflow:auto}
 
 /* TOPBAR */
 .topbar{display:flex;align-items:center;justify-content:space-between;height:56px;background:#fff;border-bottom:1px solid var(--border);padding:0 28px;position:sticky;top:0;z-index:100}
@@ -441,7 +441,7 @@ textarea.fi{min-height:72px;line-height:1.65}
     var passed = sessionStorage.getItem(GATE_KEY) === "1";
     if(passed){
       gate.classList.add("hidden");
-      document.body.style.overflow = "";
+      document.body.style.overflow = "auto";
     }
     return passed;
   }
@@ -452,7 +452,7 @@ textarea.fi{min-height:72px;line-height:1.65}
     if(entered === expected){
       sessionStorage.setItem(GATE_KEY, "1");
       gate.classList.add("hidden");
-      document.body.style.overflow = "";
+      document.body.style.overflow = "auto";
     } else {
       pwdInput.classList.add("error");
       setTimeout(function(){pwdInput.classList.remove("error");},400);
