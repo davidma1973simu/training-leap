@@ -107,7 +107,7 @@ function markStepNum(n, ok) {
   else { el.className = "step-n"; el.textContent = n; }
 }
 
-function markStepNum(n, ok) {
+function doLogin() {
   var nameEl = document.getElementById("i-name");
   var compEl = document.getElementById("i-comp");
   if (!nameEl || !compEl) return;
