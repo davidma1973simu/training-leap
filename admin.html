@@ -129,6 +129,26 @@ textarea.fi{min-height:72px;line-height:1.65}
 .import-textarea{width:100%;min-height:80px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:12px;font-family:monospace;background:#fafbfc;resize:vertical;margin-bottom:10px}
 .import-textarea:focus{outline:none;border-color:var(--accent);background:#fff}
 
+/* Admin gate */
+.gate-overlay{position:fixed;inset:0;background:linear-gradient(160deg,#f8fafc 0%,#fafbfc 45%,var(--bg) 100%);z-index:9999;display:flex;align-items:center;justify-content:center;transition:opacity .3s,visibility .3s}
+.gate-overlay.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.gate-card{width:380px;background:#fff;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,.04),0 20px 56px rgba(0,0,0,.08);padding:40px 32px;text-align:center}
+.gate-card .gate-brand{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px}
+.gate-card .gate-brand svg{width:24px;height:24px;color:var(--amber)}
+.gate-card .gate-title{font-size:18px;font-weight:700;color:var(--ink);margin-bottom:4px;letter-spacing:-.3px}
+.gate-card .gate-sub{font-size:12px;color:var(--light);margin-bottom:28px;line-height:1.7;letter-spacing:.2px}
+.gate-field{text-align:left;margin-bottom:16px}
+.gate-field label{display:block;font-size:12px;font-weight:500;color:#475569;margin-bottom:6px;letter-spacing:.2px}
+.gate-field input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;text-align:center;letter-spacing:3px;transition:all .2s}
+.gate-field input:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(217,119,6,.08)}
+.gate-field input.error{border-color:var(--rose);animation:shake .35s ease}
+.gate-btn{width:100%;padding:12px;background:var(--ink);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.3px}
+.gate-btn:hover{background:#1e293b}
+.gate-hint{margin-top:16px;padding-top:14px;border-top:1px solid #f1f5f9;font-size:11px;color:var(--light);line-height:1.7}
+.gate-back{font-size:12px;color:var(--muted);text-decoration:none;display:inline-flex;align-items:center;gap:3px;margin-top:12px;letter-spacing:.2px}
+.gate-back:hover{color:var(--accent)}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}85%{transform:translateX(3px)}}
+
 /* Tab content */
 .tab-content{display:none}
 .tab-content.active{display:block}
@@ -141,6 +161,24 @@ textarea.fi{min-height:72px;line-height:1.65}
 </style>
 </head>
 <body>
+
+<!-- ADMIN GATE -->
+<div class="gate-overlay" id="admin-gate">
+<div class="gate-card">
+  <div class="gate-brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+    <span class="gate-title">Training Leap</span>
+  </div>
+  <div class="gate-sub">此页面为培训组织者专用<br>学员请使用学员端入口</div>
+  <div class="gate-field">
+    <label>管理密码</label>
+    <input type="password" id="gate-pwd" placeholder="输入密码进入后台">
+  </div>
+  <button class="gate-btn" id="gate-btn">确认进入</button>
+  <div class="gate-hint">默认密码：<strong style="color:var(--amber);letter-spacing:1px">training</strong><br>可在「项目基本信息」卡片中修改</div>
+  <a href="index.html" class="gate-back">&larr; 返回学员端</a>
+</div>
+</div>
 
 <!-- TOPBAR -->
 <div class="topbar">
@@ -300,6 +338,14 @@ textarea.fi{min-height:72px;line-height:1.65}
           <input class="fi" id="cfg-course" placeholder="例如：战略执行与全局经营">
         </div>
       </div>
+      <div class="fg" style="margin-top:16px">
+        <div class="fg-label" style="color:var(--amber)">
+          <svg class="fl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          后台管理密码
+        </div>
+        <div class="fg-sub">学员点击「管理员进入后台」后需要输入此密码。留空则使用默认密码 training。</div>
+        <input class="fi fi-sm" id="cfg-admin-pwd" placeholder="默认：training（建议修改）" style="letter-spacing:1px;font-family:monospace">
+      </div>
       <div class="consensus-area" id="consensus-project"></div>
     </div>
     </div>
@@ -365,6 +411,58 @@ textarea.fi{min-height:72px;line-height:1.65}
 <div class="toast" id="toast"></div>
 
 <script>
+/* ===== ADMIN GATE ===== */
+(function(){
+  var GATE_KEY = "tl_admin_gate";
+  var gate = document.getElementById("admin-gate");
+  var pwdInput = document.getElementById("gate-pwd");
+  var btn = document.getElementById("gate-btn");
+
+  function getAdminPassword(){
+    // Try to read from stored config first
+    try{
+      var S = JSON.parse(localStorage["ac_v6"] || "null") || {};
+      if(S.config && S.config.adminPassword && S.config.adminPassword.trim()){
+        return S.config.adminPassword.trim();
+      }
+    }catch(e){}
+    return "training"; // default
+  }
+
+  function checkGate(){
+    var passed = sessionStorage.getItem(GATE_KEY) === "1";
+    if(passed){
+      gate.classList.add("hidden");
+    }
+    return passed;
+  }
+
+  function doGate(){
+    var entered = (pwdInput.value || "").trim().toLowerCase();
+    var expected = getAdminPassword().toLowerCase();
+    if(entered === expected){
+      sessionStorage.setItem(GATE_KEY, "1");
+      gate.classList.add("hidden");
+    } else {
+      pwdInput.classList.add("error");
+      setTimeout(function(){pwdInput.classList.remove("error");},400);
+      pwdInput.value = "";
+      pwdInput.placeholder = "密码错误，请重新输入";
+    }
+  }
+
+  if(!checkGate()){
+    // Show gate, prevent scroll on body
+    document.body.style.overflow = "hidden";
+    btn.addEventListener("click", doGate);
+    pwdInput.addEventListener("keydown", function(e){
+      if(e.key === "Enter"){e.preventDefault();doGate();}
+    });
+    // Focus input after a brief delay for animation
+    setTimeout(function(){pwdInput.focus();},300);
+  }
+})();
+
 (function() {
 "use strict";
 
@@ -535,6 +633,7 @@ function loadFields(){
   gv("cfg-pur-change",p.change);
   gv("cfg-program",S.config.program);
   gv("cfg-course",S.config.course);
+  gv("cfg-admin-pwd",S.config.adminPassword);
 }
 function gv(id,val){var el=document.getElementById(id);if(el)el.value=val||"";}
 
@@ -562,6 +661,8 @@ function doSave(){
   // project
   S.config.program=gvv("cfg-program");
   S.config.course=gvv("cfg-course");
+  var apwd = gvv("cfg-admin-pwd");
+  if(apwd) S.config.adminPassword = apwd; // only save if non-empty
 
   // Record edit metadata for each card that changed
   recordEditMeta("audience", hasAudience());
