@@ -484,14 +484,34 @@ function renderDepts(c) {
       });
     })(dels[i]);
   }
+  // Enter key on last input adds new row
+  var rows = el.querySelectorAll(".row");
+  if (rows.length) {
+    var lastRow = rows[rows.length - 1];
+    var lastInput = lastRow.querySelectorAll("input")[1];
+    if (lastInput) {
+      lastInput.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") { e.preventDefault(); addDeptRow(); }
+      });
+    }
+  }
 }
 function addDeptRow() {
+  collectData(); // save existing inputs before adding new row
   var c = currentCard();
   if (!c) return;
   if (!c.depts) c.depts = [];
   c.depts.push({});
   saveStore(store);
   renderDepts(c);
+  // Focus the new row's first input
+  setTimeout(function() {
+    var rows = document.querySelectorAll("#dept-list .row");
+    if (rows.length) {
+      var lastInput = rows[rows.length - 1].querySelector("input");
+      if (lastInput) lastInput.focus();
+    }
+  }, 10);
 }
 
 // ========= TASKS =========
@@ -513,14 +533,34 @@ function renderTasks(c) {
       });
     })(dels[i]);
   }
+  // Enter key on last input adds new row
+  var rows = el.querySelectorAll(".row");
+  if (rows.length) {
+    var lastRow = rows[rows.length - 1];
+    var lastInput = lastRow.querySelectorAll("input")[2];
+    if (lastInput) {
+      lastInput.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") { e.preventDefault(); addTaskRow(); }
+      });
+    }
+  }
 }
 function addTaskRow() {
+  collectData(); // save existing inputs before adding new row
   var c = currentCard();
   if (!c) return;
   if (!c.tasks) c.tasks = [];
   c.tasks.push({});
   saveStore(store);
   renderTasks(c);
+  // Focus the new row's first input
+  setTimeout(function() {
+    var rows = document.querySelectorAll("#task-list .row");
+    if (rows.length) {
+      var lastInput = rows[rows.length - 1].querySelector("input");
+      if (lastInput) lastInput.focus();
+    }
+  }, 10);
 }
 
 // ========= METRICS =========
@@ -552,14 +592,34 @@ function renderMetrics(c) {
       });
     })(dels[i]);
   }
+  // Enter key on last input adds new row
+  var rows = tb.querySelectorAll("tr");
+  if (rows.length) {
+    var lastRow = rows[rows.length - 1];
+    var lastInput = lastRow.querySelectorAll("input")[3];
+    if (lastInput) {
+      lastInput.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") { e.preventDefault(); addMetricRow(); }
+      });
+    }
+  }
 }
 function addMetricRow() {
+  collectData(); // save existing inputs before adding new row
   var c = currentCard();
   if (!c) return;
   if (!c.metrics) c.metrics = [];
   c.metrics.push({});
   saveStore(store);
   renderMetrics(c);
+  // Focus the new row's first input
+  setTimeout(function() {
+    var rows = document.querySelectorAll("#mtbody tr");
+    if (rows.length) {
+      var lastInput = rows[rows.length - 1].querySelector("input");
+      if (lastInput) lastInput.focus();
+    }
+  }, 10);
 }
 
 // ========= SAVE =========
