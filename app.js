@@ -329,7 +329,6 @@ function renderCanvas() {
   renderMethodNotes(c);
   renderDepts(c);
   renderTasks(c);
-  renderMetrics(c);
   updateProgress(c);
   toggleStep(1, true);
 }
@@ -521,7 +520,7 @@ function renderTasks(c) {
   var ts = (c.tasks && c.tasks.length) ? c.tasks : [{}];
   var html = "";
   for (var i = 0; i < ts.length; i++) {
-    html += '<div class="row"><input class="fti" style="flex:3" placeholder="任务描述" value="' + esc(ts[i].desc || "") + '"><input class="fti" style="flex:1" placeholder="负责人" value="' + esc(ts[i].owner || "") + '"><input class="fti" style="flex:1" placeholder="截止时间" value="' + esc(ts[i].dl || "") + '"><button class="btnDel" type="button">&times;</button></div>';
+    html += '<div class="row"><input class="fti" style="flex:3" placeholder="任务描述" value="' + esc(ts[i].desc || "") + '"><input class="fti" style="flex:1" placeholder="截止时间" value="' + esc(ts[i].dl || "") + '"><button class="btnDel" type="button">&times;</button></div>';
   }
   el.innerHTML = html;
   var dels = el.querySelectorAll(".btnDel");
@@ -533,11 +532,11 @@ function renderTasks(c) {
       });
     })(dels[i]);
   }
-  // Enter key on last input adds new row
+  // Enter key on last input (deadline) adds new row
   var rows = el.querySelectorAll(".row");
   if (rows.length) {
     var lastRow = rows[rows.length - 1];
-    var lastInput = lastRow.querySelectorAll("input")[2];
+    var lastInput = lastRow.querySelectorAll("input")[1];
     if (lastInput) {
       lastInput.addEventListener("keydown", function(e) {
         if (e.key === "Enter") { e.preventDefault(); addTaskRow(); }
@@ -556,65 +555,6 @@ function addTaskRow() {
   // Focus the new row's first input
   setTimeout(function() {
     var rows = document.querySelectorAll("#task-list .row");
-    if (rows.length) {
-      var lastInput = rows[rows.length - 1].querySelector("input");
-      if (lastInput) lastInput.focus();
-    }
-  }, 10);
-}
-
-// ========= METRICS =========
-function renderMetrics(c) {
-  var tb = document.getElementById("mtbody");
-  if (!tb) return;
-  var ms = (c.metrics && c.metrics.length && c.metrics[0] && c.metrics[0].n) ? c.metrics : [];
-  if (!ms.length) {
-    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;font-size:13px;padding:16px">暂无追踪指标</td></tr>';
-    return;
-  }
-  var html = "";
-  for (var i = 0; i < ms.length; i++) {
-    html += '<tr><td><input class="fti" style="font-size:13px;padding:7px 10px" value="' + esc(ms[i].n || "") + '"></td><td><input class="fti" style="font-size:13px;padding:7px 10px" value="' + esc(ms[i].t || "") + '"></td><td><input class="fti" style="font-size:13px;padding:7px 10px" value="' + esc(ms[i].cur || "") + '"></td><td><input class="fti" style="font-size:13px;padding:7px 10px" value="' + esc(ms[i].dt || "") + '"></td><td><button class="btnDel" data-i="' + i + '" type="button">&times;</button></td></tr>';
-  }
-  tb.innerHTML = html;
-  var dels = tb.querySelectorAll(".btnDel");
-  for (var i = 0; i < dels.length; i++) {
-    (function(btn) {
-      btn.addEventListener("click", function() {
-        var idx = parseInt(btn.getAttribute("data-i"), 10);
-        var cc = currentCard();
-        if (cc && cc.metrics) {
-          cc.metrics.splice(idx, 1);
-          saveStore(store);
-          renderMetrics(cc);
-          autoSave();
-        }
-      });
-    })(dels[i]);
-  }
-  // Enter key on last input adds new row
-  var rows = tb.querySelectorAll("tr");
-  if (rows.length) {
-    var lastRow = rows[rows.length - 1];
-    var lastInput = lastRow.querySelectorAll("input")[3];
-    if (lastInput) {
-      lastInput.addEventListener("keydown", function(e) {
-        if (e.key === "Enter") { e.preventDefault(); addMetricRow(); }
-      });
-    }
-  }
-}
-function addMetricRow() {
-  collectData(); // save existing inputs before adding new row
-  var c = currentCard();
-  if (!c) return;
-  if (!c.metrics) c.metrics = [];
-  c.metrics.push({});
-  saveStore(store);
-  renderMetrics(c);
-  // Focus the new row's first input
-  setTimeout(function() {
-    var rows = document.querySelectorAll("#mtbody tr");
     if (rows.length) {
       var lastInput = rows[rows.length - 1].querySelector("input");
       if (lastInput) lastInput.focus();
@@ -661,15 +601,7 @@ function collectData() {
   for (var i = 0; i < trs.length; i++) {
     var ins = trs[i].querySelectorAll("input");
     if (ins[0] && ins[0].value) {
-      c.tasks.push({ desc: ins[0].value, owner: ins[1]?ins[1].value:"", dl: ins[2]?ins[2].value:"" });
-    }
-  }
-  c.metrics = [];
-  var mtrs = document.querySelectorAll("#mtbody tr");
-  for (var i = 0; i < mtrs.length; i++) {
-    var ins = mtrs[i].querySelectorAll("input");
-    if (ins.length >= 4 && ins[0] && ins[0].value) {
-      c.metrics.push({ n: ins[0].value, t: ins[1]?ins[1].value:"", cur: ins[2]?ins[2].value:"", dt: ins[3]?ins[3].value:"" });
+      c.tasks.push({ desc: ins[0].value, dl: ins[1]?ins[1].value:"" });
     }
   }
   c.updated = iso();
@@ -773,24 +705,68 @@ function showSubmitModal(jsonStr) {
   var existing = document.getElementById("submit-modal");
   if (existing) existing.remove();
 
+  // Parse for summary
+  var summary = { name: "学员", comp: "", title: "", pct: "0" };
+  try {
+    var data = JSON.parse(jsonStr);
+    if (data.user) { summary.name = data.user.name || "学员"; summary.comp = data.user.comp || ""; }
+    if (data.card) { summary.title = data.card.title || (data.card.v1 ? data.card.v1.slice(0,40) + "…" : "未命名计划"); summary.pct = String(Math.round(doneCount(data.card) / 5 * 100)); }
+  } catch(e) {}
+
   var overlay = document.createElement("div");
   overlay.id = "submit-modal";
   overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px";
   overlay.innerHTML =
-    '<div style="background:#fff;border-radius:16px;width:540px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.15);padding:28px">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">' +
-        '<h3 style="font-size:17px;font-weight:700;color:#0f172a">提交码已生成</h3>' +
-        '<button id="submit-modal-close" style="background:none;border:none;font-size:22px;cursor:pointer;color:#94a3b8;line-height:1">&times;</button>' +
+    '<div style="background:#fff;border-radius:20px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.15);padding:32px">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">' +
+        '<div style="display:flex;align-items:center;gap:10px">' +
+          '<div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-light));display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px">&#10003;</div>' +
+          '<h3 style="font-size:18px;font-weight:700;color:#0f172a;letter-spacing:-.3px">提交码已生成</h3>' +
+        '</div>' +
+        '<button id="submit-modal-close" style="background:none;border:none;font-size:24px;cursor:pointer;color:#94a3b8;line-height:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;transition:background .15s" onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'none\'">&times;</button>' +
       '</div>' +
-      '<p style="font-size:13px;color:#64748b;margin-bottom:14px;line-height:1.6">将下方内容复制后，发送给培训管理员（HR 或培训师），管理员将在后台导入查看你的进度。</p>' +
-      '<textarea readonly style="width:100%;min-height:160px;padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:monospace;font-size:11px;background:#f8fafc;color:#334155;resize:vertical;line-height:1.6;word-break:break-all" onclick="this.select()">'+ jsonStr.replace(/</g,"&lt;") +'</textarea>' +
-      '<div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">' +
-        '<button id="btn-copy-submit" style="padding:9px 22px;background:#0f172a;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">复制到剪贴板</button>' +
-        '<button id="btn-close-submit" style="padding:9px 18px;background:#fff;color:#64748b;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">关闭</button>' +
+
+      // Summary card
+      '<div style="background:linear-gradient(135deg,#f0fdfa 0%,#fafbfc 100%);border:1.5px solid var(--accent-border);border-radius:14px;padding:18px 20px;margin-bottom:18px">' +
+        '<div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">计划摘要</div>' +
+        '<div style="display:flex;gap:16px;flex-wrap:wrap">' +
+          '<div><div style="font-size:11px;color:var(--light);margin-bottom:2px">学员</div><div style="font-size:14px;font-weight:600;color:var(--ink)">' + esc(summary.name) + '</div></div>' +
+          '<div><div style="font-size:11px;color:var(--light);margin-bottom:2px">公司/项目</div><div style="font-size:14px;font-weight:600;color:var(--ink)">' + esc(summary.comp || "—") + '</div></div>' +
+          '<div style="flex:1;min-width:160px"><div style="font-size:11px;color:var(--light);margin-bottom:2px">计划标题</div><div style="font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(summary.title || "—") + '</div></div>' +
+          '<div><div style="font-size:11px;color:var(--light);margin-bottom:2px">完成度</div><div style="font-size:14px;font-weight:700;color:var(--accent)">' + esc(summary.pct) + '%</div></div>' +
+        '</div>' +
+      '</div>' +
+
+      '<p style="font-size:13px;color:#64748b;margin-bottom:14px;line-height:1.6">提交码已自动复制到剪贴板。将下方内容发送给培训管理员（HR 或培训师），管理员将在后台导入查看你的进度。</p>' +
+
+      // Raw data (collapsible)
+      '<div style="margin-bottom:16px">' +
+        '<div id="submit-raw-toggle" style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);padding:8px 0;user-select:none">' +
+          '<svg id="submit-raw-arr" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .2s"><polyline points="9 18 15 12 9 6"/></svg>' +
+          '查看原始提交码' +
+        '</div>' +
+        '<textarea id="submit-raw-ta" readonly style="display:none;width:100%;min-height:120px;padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:monospace;font-size:11px;background:#f8fafc;color:#334155;resize:vertical;line-height:1.6;word-break:break-all;transition:all .2s" onclick="this.select()">'+ jsonStr.replace(/</g,"&lt;") +'</textarea>' +
+      '</div>' +
+
+      '<div style="display:flex;gap:10px;justify-content:flex-end">' +
+        '<button id="btn-copy-submit" style="padding:10px 24px;background:var(--ink);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">复制提交码</button>' +
+        '<button id="btn-close-submit" style="padding:10px 20px;background:#fff;color:#64748b;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s">关闭</button>' +
       '</div>' +
     '</div>';
 
   document.body.appendChild(overlay);
+
+  // Toggle raw data
+  var rawToggle = document.getElementById("submit-raw-toggle");
+  var rawTa = document.getElementById("submit-raw-ta");
+  var rawArr = document.getElementById("submit-raw-arr");
+  if (rawToggle && rawTa) {
+    rawToggle.addEventListener("click", function() {
+      var showing = rawTa.style.display !== "none";
+      rawTa.style.display = showing ? "none" : "block";
+      if (rawArr) rawArr.style.transform = showing ? "rotate(0deg)" : "rotate(90deg)";
+    });
+  }
 
   document.getElementById("submit-modal-close").onclick = function(){overlay.remove()};
   document.getElementById("btn-close-submit").onclick = function(){overlay.remove()};
@@ -799,12 +775,10 @@ function showSubmitModal(jsonStr) {
       var btn = document.getElementById("btn-copy-submit");
       btn.textContent = "已复制!";
       btn.style.background = "#059669";
-      setTimeout(function(){btn.textContent = "复制到剪贴板";btn.style.background = "#0f172a"},1500);
+      setTimeout(function(){btn.textContent = "复制提交码";btn.style.background = "#0f172a"},1500);
     }).catch(function(){
-      // Fallback: select all text
-      var ta = overlay.querySelector("textarea");
-      ta.select();
-      document.execCommand("copy");
+      var ta = document.getElementById("submit-raw-ta");
+      if (ta) { ta.style.display = "block"; ta.select(); document.execCommand("copy"); }
     });
   };
 
@@ -864,8 +838,6 @@ function initBindings() {
   if (bAddDept) bAddDept.addEventListener("click", addDeptRow);
   var bAddTask = document.getElementById("b-add-task");
   if (bAddTask) bAddTask.addEventListener("click", addTaskRow);
-  var bAddMet = document.getElementById("b-add-met");
-  if (bAddMet) bAddMet.addEventListener("click", addMetricRow);
 
   var inputs = document.querySelectorAll("input, textarea");
   for (var j = 0; j < inputs.length; j++) {
