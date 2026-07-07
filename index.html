@@ -36,6 +36,14 @@ body{font-family:-apple-system,"PingFang SC","Helvetica Neue","Noto Sans SC",san
 .login-note{text-align:center;margin-top:20px;font-size:11px;color:var(--light);line-height:1.8;letter-spacing:.2px}
 .login-note a{color:var(--muted);text-decoration:none;transition:color .15s}
 .login-note a:hover{color:var(--accent)}
+.cfg-import{margin-top:14px;text-align:center}
+.cfg-import > a{font-size:11px;color:var(--muted);text-decoration:none;letter-spacing:.2px;transition:color .15s}
+.cfg-import > a:hover{color:var(--accent)}
+#cfg-import-area{display:none;margin-top:10px;text-align:left}
+#cfg-import-area textarea{width:100%;min-height:64px;padding:10px;border:1.5px solid var(--border);border-radius:10px;font-size:12px;font-family:monospace;resize:vertical;box-sizing:border-box;font-family:inherit;color:var(--ink)}
+#cfg-import-area textarea:focus{outline:none;border-color:var(--accent)}
+#cfg-import-area button{margin-top:8px;width:100%;padding:8px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s}
+#cfg-import-area button:hover{background:var(--accent-light)}
 
 /* ========= TOPBAR ========= */
 .topbar{height:56px;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;position:sticky;top:0;z-index:20}
@@ -183,6 +191,24 @@ table.mt td{padding:6px 10px}
 .mtag{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:#475569;transition:all .2s;user-select:none;letter-spacing:.2px}
 .mtag:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
 .mtag.sel{background:linear-gradient(135deg,var(--accent),var(--accent-light));color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(13,148,136,.25)}
+.mtag-info{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;margin-left:4px;border-radius:50%;background:rgba(100,116,139,.14);color:inherit;font-size:12px;font-weight:700;cursor:help;flex-shrink:0;transition:background .15s}
+.mtag:hover .mtag-info{background:rgba(13,148,136,.18)}
+.mtag.sel .mtag-info{background:rgba(255,255,255,.28);color:#fff}
+
+/* Method info popup */
+.method-pop{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
+.method-pop-card{background:#fff;border-radius:16px;width:520px;max-width:95vw;max-height:86vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.2);padding:24px 26px;animation:cardIn .2s ease}
+.mp-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:6px}
+.mp-head h4{font-size:17px;font-weight:700;color:var(--ink);flex:1;line-height:1.4}
+.mp-close{background:none;border:none;font-size:26px;cursor:pointer;color:#94a3b8;line-height:1;width:32px;height:32px;border-radius:8px;flex-shrink:0}
+.mp-close:hover{background:#f1f5f9}
+.mp-sub{font-size:13px;color:var(--accent);font-weight:600;margin-bottom:16px;line-height:1.5}
+.mp-row{display:flex;gap:12px;align-items:baseline;margin-bottom:6px}
+.mp-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0}
+.mp-val{font-size:13px;color:var(--ink)}
+.mp-sec{margin-top:14px}
+.mp-text{font-size:13px;color:var(--ink);line-height:1.7;white-space:pre-wrap;word-break:break-word;background:var(--bg);border-radius:10px;padding:12px 14px;margin-top:6px}
+.mp-output{background:var(--accent-bg);border:1px solid var(--accent-border)}
 #no-methods-hint{font-size:12px;color:var(--light);margin-top:8px;display:none}
 
 /* Per-method strategy card */
@@ -266,6 +292,13 @@ table.mt td{padding:6px 10px}
   <div class="field"><label>姓名</label><input id="i-name" placeholder="输入你的姓名"></div>
   <div class="field"><label>公司 / 培训项目</label><input id="i-comp" placeholder="例如：松下电器 · 劲松营"></div>
   <button id="b-login" class="btn-primary">进入</button>
+  <div class="cfg-import">
+    <a href="javascript:void(0)" id="b-cfg-toggle">培训组织者已提供配置？点此载入 &rarr;</a>
+    <div id="cfg-import-area">
+      <textarea id="cfg-import-data" placeholder="粘贴培训组织者提供的「配置码」..."></textarea>
+      <button id="b-cfg-import">载入配置</button>
+    </div>
+  </div>
   <div class="login-note">
     培训课后行动计划与跟进<br>
     将培训所学落实到真实业务问题中<br><br>
@@ -457,6 +490,11 @@ table.mt td{padding:6px 10px}
 </div>
 </div><!-- page-canvas -->
 
-<script src="app.js?v=3"></script>
+<!-- METHOD INFO POPUP -->
+<div class="method-pop" id="method-pop" style="display:none">
+  <div class="method-pop-card" id="method-pop-card"></div>
+</div>
+
+<script src="app.js?v=4"></script>
 </body>
 </html>

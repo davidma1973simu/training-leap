@@ -121,6 +121,41 @@ function doLogin() {
 }
 window.doLogin = doLogin;
 
+// Load admin's exported config so student sees audience context + method tools
+function importStudentConfig() {
+  var ta = document.getElementById("cfg-import-data");
+  if (!ta) return;
+  var raw = ta.value.trim();
+  if (!raw) { alert("请先粘贴培训组织者提供的配置码"); return; }
+  try {
+    var data = JSON.parse(raw);
+    var cfg = data.config || {};
+    // Merge config (audience, purpose, program, course, methods) into store
+    store.config = store.config || {};
+    if (cfg.program) store.config.program = cfg.program;
+    if (cfg.course) store.config.course = cfg.course;
+    if (cfg.audience) store.config.audience = cfg.audience;
+    if (cfg.purpose) store.config.purpose = cfg.purpose;
+    if (cfg.methods) {
+      // Normalize methods to objects (handle legacy string arrays)
+      var norm = [];
+      for (var i = 0; i < cfg.methods.length; i++) {
+        var m = cfg.methods[i];
+        if (typeof m === "string") norm.push({ name: m, desc:"", when:"", problem:"", steps:"", output:"" });
+        else norm.push(m);
+      }
+      store.config.methods = norm;
+    }
+    saveStore(store);
+    var nTools = (store.config.methods || []).length;
+    alert("配置已载入！\n" + (store.config.program ? ("项目：" + store.config.program + "\n") : "") + "方法工具：" + nTools + " 个\n\n现在填写姓名和公司即可开始。");
+    ta.value = "";
+    document.getElementById("cfg-import-area").style.display = "none";
+  } catch(e) {
+    alert("配置码解析失败，请确认粘贴的是完整的配置码 JSON。");
+  }
+}
+
 // ========= DASHBOARD =========
 function renderDash() {
   if (!store.user) return;
@@ -368,6 +403,9 @@ function updateHintsFromConfig() {
 
 // ========= METHOD TAGS =========
 // Step 4 Part 2: select methods after writing strategy
+function methodName(m) {
+  return (m && typeof m === "object") ? (m.name || "") : m;
+}
 function renderMethodTags(c) {
   var el = document.getElementById("method-tags");
   var hint = document.getElementById("no-methods-hint");
@@ -389,8 +427,11 @@ function renderMethodTags(c) {
 
   var html = '<div class="method-tags">';
   for (var j = 0; j < methods.length; j++) {
-    var isSel = !!selSet[methods[j]];
-    html += '<span class="mtag' + (isSel ? ' sel' : '') + '" data-mname="' + esc(methods[j]) + '">' + esc(methods[j]) + '</span>';
+    var mname = methodName(methods[j]);
+    var isSel = !!selSet[mname];
+    html += '<span class="mtag' + (isSel ? ' sel' : '') + '" data-mname="' + esc(mname) + '">' + esc(mname);
+    html += '  <span class="mtag-info" data-mname="' + esc(mname) + '" title="查看工具说明">&#9432;</span>';
+    html += '</span>';
   }
   html += '</div>';
   el.innerHTML = html;
@@ -398,8 +439,16 @@ function renderMethodTags(c) {
   var tags = el.querySelectorAll(".mtag");
   for (var k = 0; k < tags.length; k++) {
     (function(tag) {
-      tag.addEventListener("click", function() {
-        var mname = tag.getAttribute("data-mname");
+      var mname = tag.getAttribute("data-mname");
+      var infoBtn = tag.querySelector(".mtag-info");
+      if (infoBtn) {
+        infoBtn.addEventListener("click", function(e) {
+          e.stopPropagation();
+          showMethodInfo(mname);
+        });
+      }
+      tag.addEventListener("click", function(e) {
+        if (e.target.classList.contains("mtag-info")) return;
         var cc = currentCard();
         if (!cc) return;
         if (!cc.v4methods) cc.v4methods = [];
@@ -430,18 +479,28 @@ function renderMethodNotes(c) {
   var names = c.v4methods || [];
   if (!names.length) { el.innerHTML = ""; return; }
 
+  // Build tool lookup for output hints
+  var toolMap = {};
+  var methods = store.config.methods || [];
+  for (var mi = 0; mi < methods.length; mi++) {
+    toolMap[methodName(methods[mi])] = methods[mi];
+  }
+
   var html = "";
   for (var i = 0; i < names.length; i++) {
     var mname = names[i];
     var note = (c.v4notes && c.v4notes[mname]) || "";
+    var tool = toolMap[mname] || {};
+    var t = (tool && typeof tool === "object") ? tool : {};
+    var outputHint = t.output ? ("例：" + t.output) : "例：用此工具厘清问题，输出可落地的分析结论";
     html += '<div class="method-note">';
     html +=   '<div class="method-note-hd">';
     html +=     '<span class="method-note-badge">' + esc(mname) + '</span>';
-    html +=     '<span style="font-size:11px;color:var(--muted)">方法如何支撑你的策略？</span>';
+    html +=     '<span style="font-size:11px;color:var(--muted)">你计划如何使用此工具？</span>';
     html +=   '</div>';
     html +=   '<div class="method-note-bd">';
     html +=     '<div class="flbl">用法备注（选填）</div>';
-    html +=     '<textarea class="fta method-note-ta" data-mname="' + esc(mname) + '" placeholder="例：用「战略地图」厘清华东区市场细分维度，输出3个高潜力客户群...">' + esc(note) + '</textarea>';
+    html +=     '<textarea class="fta method-note-ta" data-mname="' + esc(mname) + '" placeholder="' + esc(outputHint) + '">' + esc(note) + '</textarea>';
     html +=   '</div>';
     html += '</div>';
   }
@@ -463,6 +522,35 @@ function renderMethodNotes(c) {
     })(tas[j]);
   }
 }
+
+// ========= METHOD INFO POPUP =========
+function showMethodInfo(mname) {
+  var methods = store.config.methods || [];
+  var tool = null;
+  for (var i = 0; i < methods.length; i++) {
+    if (methodName(methods[i]) === mname) { tool = methods[i]; break; }
+  }
+  var pop = document.getElementById("method-pop");
+  var card = document.getElementById("method-pop-card");
+  if (!pop || !card) return;
+  if (!tool) {
+    card.innerHTML = '<div class="mp-head"><h4>' + esc(mname) + '</h4><button id="mp-close" class="mp-close">&times;</button></div><div class="mp-text">暂无详细说明。</div>';
+  } else {
+    var t = (typeof tool === "object") ? tool : { name: mname };
+    var html = '<div class="mp-head"><h4>' + esc(t.name || mname) + '</h4><button id="mp-close" class="mp-close" title="关闭">&times;</button></div>';
+    if (t.desc) html += '<div class="mp-sub">' + esc(t.desc) + '</div>';
+    html += '<div class="mp-row"><span class="mp-label">什么时候用</span><span class="mp-val">' + esc(t.when || "—") + '</span></div>';
+    html += '<div class="mp-sec"><span class="mp-label">解决什么问题</span><div class="mp-text">' + esc(t.problem || "—") + '</div></div>';
+    html += '<div class="mp-sec"><span class="mp-label">使用步骤</span><div class="mp-text">' + esc(t.steps || "—") + '</div></div>';
+    html += '<div class="mp-sec"><span class="mp-label">预期产出</span><div class="mp-text mp-output">' + esc(t.output || "—") + '</div></div>';
+    card.innerHTML = html;
+  }
+  pop.style.display = "flex";
+  var close = document.getElementById("mp-close");
+  if (close) close.onclick = function() { pop.style.display = "none"; };
+  pop.onclick = function(e) { if (e.target === pop) pop.style.display = "none"; };
+}
+window.showMethodInfo = showMethodInfo;
 
 // ========= DEPTS =========
 function renderDepts(c) {
@@ -826,6 +914,15 @@ function initBindings() {
 
   var bLogo = document.getElementById("b-logo");
   if (bLogo) bLogo.addEventListener("click", function() { switchPage("p-dash"); });
+
+  // Config import (load admin's exported config so tools reach students)
+  var bCfgToggle = document.getElementById("b-cfg-toggle");
+  if (bCfgToggle) bCfgToggle.addEventListener("click", function() {
+    var area = document.getElementById("cfg-import-area");
+    if (area) area.style.display = (area.style.display === "none" ? "block" : "none");
+  });
+  var bCfgImport = document.getElementById("b-cfg-import");
+  if (bCfgImport) bCfgImport.addEventListener("click", importStudentConfig);
 
   for (var i = 1; i <= 5; i++) {
     (function(n) {
